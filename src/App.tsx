@@ -7,17 +7,17 @@ import { Inspector } from './components/Inspector';
 import { Project, EditorState, GradeMode, EditorTool, SequencePart } from './types';
 import { PROJECTS } from './constants';
 import { parseDurationToSeconds } from './lib/utils';
-import { Github, Twitter, Youtube, Mail, Film, Command, GripVertical, GripHorizontal, Maximize2, Minimize2, Laptop, Smartphone, Library, SquarePlay, Compass, Fingerprint } from 'lucide-react';
+import { Github, Twitter, Youtube, Mail, Film, Command, GripVertical, GripHorizontal, Maximize2, Minimize2, Laptop, Smartphone, Library, SquarePlay, Compass, Fingerprint, User } from 'lucide-react';
 
 export default function App() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [mobileTab, setMobileTab] = useState<'SPHERE' | 'LIBRARY' | 'EDITOR' | 'ASSETS' | 'IDENTITY'>('SPHERE');
+  const [mobileTab, setMobileTab] = useState<'SPHERE' | 'LIBRARY' | 'EDITOR' | 'ASSETS' | 'IDENTITY' | 'ME'>('SPHERE');
   const [state, setState] = useState<EditorState>({
-    currentTime: 10,
-    isPlaying: false,
-    discoveryTime: 10,
-    discoveryIsPlaying: false,
+    currentTime: 0,
+    isPlaying: true,
+    discoveryTime: 0,
+    discoveryIsPlaying: true,
     selectedProject: null,
     showGuides: true,
     viewMode: 'DISCOVERY',
@@ -765,6 +765,14 @@ export default function App() {
         </div>
         <div className="flex items-center gap-3">
            <button 
+             onClick={() => setMobileTab('ME')}
+             className={`px-2 py-1 flex items-center gap-1.5 rounded-md border transition-all active:scale-95 ${mobileTab === 'ME' ? 'bg-editor-accent text-white border-editor-accent shadow-[0_0_10px_#0078d4]' : 'bg-editor-panel text-editor-muted border-editor-border hover:bg-white/5'}`}
+             title="About Me"
+           >
+             <User size={10} />
+             <span className="text-[8px] font-black uppercase tracking-tighter uppercase">Me</span>
+           </button>
+           <button 
              onClick={toggleLock}
              className={`px-2 py-0.5 rounded text-[8px] font-black tracking-widest border border-editor-accent/30 transition-all active:scale-95 ${state.isTimelineLocked ? 'text-red-500 bg-red-500/10' : 'text-green-500 bg-green-500/10 animate-pulse'}`}
            >
@@ -961,14 +969,72 @@ export default function App() {
                    </div>
                 )}
 
-                {mobileTab === 'IDENTITY' && (
-                   <div className="absolute inset-0 flex flex-col bg-[#050505]">
-                      <Inspector 
-                        selectedProject={state.selectedProject}
-                        isPlaying={state.isPlaying}
-                      />
-                   </div>
-                )}
+                 {mobileTab === 'IDENTITY' && (
+                    <div className="absolute inset-0 flex flex-col bg-[#050505]">
+                       <Inspector 
+                         selectedProject={state.selectedProject}
+                         isPlaying={state.isPlaying}
+                       />
+                    </div>
+                 )}
+
+                 {mobileTab === 'ME' && (
+                    <div className="absolute inset-0 flex flex-col bg-editor-bg p-6 overflow-y-auto pt-16">
+                       <div className="flex flex-col items-center mb-10 text-center">
+                          <div className="w-24 h-24 rounded-full bg-editor-accent/20 border-2 border-editor-accent flex items-center justify-center mb-4 shadow-[0_0_30px_#0078d4]">
+                             <User size={48} className="text-editor-accent" />
+                          </div>
+                          <h2 className="text-xl font-black uppercase tracking-widest text-white">Ayush Kumar</h2>
+                          <p className="text-editor-muted text-[10px] font-mono tracking-tighter mt-1">LEAD CINEMATOGRAPHER & EDITOR</p>
+                       </div>
+
+                       <div className="space-y-6">
+                          <div className="bg-editor-panel border border-editor-border p-4 rounded-lg">
+                             <h3 className="text-[10px] font-black text-editor-accent uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                <Film size={12} />
+                                Technical Proficiency
+                             </h3>
+                             <div className="grid grid-cols-2 gap-3">
+                                {['DaVinci Resolve', 'Adobe Premiere', 'After Effects', 'Blender', 'Cinema 4D', 'Unreal Engines'].map(skill => (
+                                   <div key={skill} className="flex items-center gap-2 text-[9px] font-mono text-editor-muted translate-y-0 hover:translate-x-1 transition-transform">
+                                      <div className="w-1 h-1 bg-editor-accent rounded-full" />
+                                      {skill}
+                                   </div>
+                                ))}
+                             </div>
+                          </div>
+
+                          <div className="bg-editor-panel border border-editor-border p-4 rounded-lg">
+                             <h3 className="text-[10px] font-black text-editor-accent uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                <Library size={12} />
+                                Creative Arsenal
+                             </h3>
+                             <p className="text-[11px] text-editor-muted leading-relaxed italic">
+                                "Synthesizing visual storytelling with hyper-technical execution to create immersive digital experiences."
+                             </p>
+                          </div>
+
+                          <div className="flex justify-between gap-4 py-4">
+                             <a href="#" className="flex-1 bg-editor-bg border border-editor-border p-3 rounded-lg flex flex-col items-center gap-2 hover:bg-white/[0.02] transition-colors">
+                                <Twitter size={16} className="text-editor-accent" />
+                                <span className="text-[8px] font-black uppercase tracking-widest">Connect</span>
+                             </a>
+                             <a href="#" className="flex-1 bg-editor-bg border border-editor-border p-3 rounded-lg flex flex-col items-center gap-2 hover:bg-white/[0.02] transition-colors">
+                                <Github size={16} className="text-editor-accent" />
+                                <span className="text-[8px] font-black uppercase tracking-widest">Pipeline</span>
+                             </a>
+                             <a href="#" className="flex-1 bg-editor-bg border border-editor-border p-3 rounded-lg flex flex-col items-center gap-2 hover:bg-white/[0.02] transition-colors">
+                                <Youtube size={16} className="text-editor-accent" />
+                                <span className="text-[8px] font-black uppercase tracking-widest">Showreel</span>
+                             </a>
+                          </div>
+                          
+                          <div className="pt-4 border-t border-editor-border text-center">
+                             <span className="text-[8px] font-mono text-editor-muted opacity-50 uppercase">Timeline Pro v4.0.2 // Core_Build_Active</span>
+                          </div>
+                       </div>
+                    </div>
+                 )}
 
                 {mobileTab === 'EDITOR' && (
                    <div className="absolute inset-0 flex flex-col">

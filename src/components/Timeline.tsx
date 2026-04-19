@@ -451,7 +451,7 @@ export const Timeline = memo(function Timeline({
         >
            <div ref={tracksRef} className="relative" style={{ width: totalWidth }}>
               {/* Time Ruler */}
-              <div className="h-7 border-b border-editor-border bg-editor-panel/70 flex items-center relative z-10" onClick={handleTimelineClick}>
+              <div className="h-6 md:h-7 border-b border-editor-border bg-editor-panel/70 flex items-center relative z-10" onClick={handleTimelineClick}>
                  {Array.from({ length: Math.ceil(totalDuration / rulerInterval) + 1 }).map((_, i) => (
                    <div 
                      key={i} 
@@ -498,7 +498,7 @@ export const Timeline = memo(function Timeline({
                  
                  {viewMode === 'DISCOVERY' ? (
                     /* Discovery Track Area - Unified Continuous Path */
-                    <div className="relative h-16 border-b border-white/5 flex items-center bg-editor-accent/5 overflow-hidden">
+                    <div className="relative h-12 md:h-16 border-b border-white/5 flex items-center bg-editor-accent/5 overflow-hidden">
                        <div className="flex-1 h-full relative">
                           {/* Continuous Background Track */}
                           <div className="absolute h-10 top-3 bg-white/[0.03] border border-white/10 rounded-sm" style={{ width: totalDuration * pixelsPerSecond }} />
@@ -533,14 +533,14 @@ export const Timeline = memo(function Timeline({
                  ) : (
                     <>
                        {/* V2 TRACK Area */}
-                       <div className={`group relative h-16 border-b border-white/5 flex items-center bg-white/[0.04] transition-opacity duration-300 ${!isV2Visible ? 'opacity-20 grayscale bg-black/40 pointer-events-none' : 'bg-white/[0.04]'}`}>
+                       <div className={`group relative h-12 md:h-16 border-b border-white/5 flex items-center bg-white/[0.04] transition-opacity duration-300 ${!isV2Visible ? 'opacity-20 grayscale bg-black/40 pointer-events-none' : 'bg-white/[0.04]'}`}>
                           <div className="flex-1 h-full relative">
                              {v2Parts.map((part) => {
                                const isCollapsed = (part.end - part.start) < 0.01;
                                return (
                                <motion.div 
                                  key={part.id}
-                                 className={`absolute h-10 top-3 border border-white/20 overflow-visible flex flex-col shadow-2xl transition-all hover:shadow-editor-accent/20 group/clip ${isCollapsed ? 'z-30 w-[4px] bg-white shadow-[0_0_8px_white]' : ''}`}
+                                 className={`absolute h-8 top-2 md:h-10 md:top-3 border border-white/20 overflow-visible flex flex-col shadow-2xl transition-all hover:shadow-editor-accent/20 group/clip ${isCollapsed ? 'z-30 w-[4px] bg-white shadow-[0_0_8px_white]' : ''}`}
                                  style={{ 
                                    left: part.start * pixelsPerSecond - (isCollapsed ? 2 : 0), 
                                    width: isCollapsed ? 4 : (part.end - part.start) * pixelsPerSecond, 
@@ -566,14 +566,14 @@ export const Timeline = memo(function Timeline({
                        </div>
 
                        {/* V1 TRACK Area */}
-                       <div className={`group relative h-16 border-b border-white/5 flex items-center bg-white/[0.02] transition-opacity duration-300 ${!isV1Visible ? 'opacity-20 grayscale bg-black/40 pointer-events-none' : 'bg-white/[0.02]'}`}>
+                       <div className={`group relative h-12 md:h-16 border-b border-white/5 flex items-center bg-white/[0.02] transition-opacity duration-300 ${!isV1Visible ? 'opacity-20 grayscale bg-black/40 pointer-events-none' : 'bg-white/[0.02]'}`}>
                           <div className="flex-1 h-full relative">
                              {v1Parts.map((part) => {
                                const isCollapsed = (part.end - part.start) < 0.01;
                                return (
                                <motion.div 
                                  key={part.id}
-                                 className={`absolute h-10 top-3 border transition-all flex flex-col group/clip ${isCollapsed ? 'z-30 w-[4px] bg-white border-white shadow-[0_0_8px_white]' : 'bg-emerald-500/20 border-emerald-500/30 rounded overflow-visible hover:bg-emerald-500/30'}`}
+                                 className={`absolute h-8 top-2 md:h-10 md:top-3 border transition-all flex flex-col group/clip ${isCollapsed ? 'z-30 w-[4px] bg-white border-white shadow-[0_0_8px_white]' : 'bg-emerald-500/20 border-emerald-500/30 rounded overflow-visible hover:bg-emerald-500/30'}`}
                                  style={{ 
                                    left: part.start * pixelsPerSecond - (isCollapsed ? 2 : 0), 
                                    width: isCollapsed ? 4 : (part.end - part.start) * pixelsPerSecond 
