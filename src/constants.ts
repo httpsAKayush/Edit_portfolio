@@ -32,7 +32,7 @@ export const PROJECTS: Project[] = [
   },
   {
     id: 'p3',
-    title: 'MASKING_EDIT_REEL',
+    title: 'MASKING EDIT REEL',
     client: 'Self_Project',
     year: '2023',
     thumbnail: '/photos/MASKING_EDIT_REEL.png',
@@ -228,7 +228,7 @@ export const PROJECTS: Project[] = [
   },
   {
     id: 'p17',
-    title: 'EVENT_PROMOTION_REEL',
+    title: 'EVENT PROMOTION REEL',
     client: 'VIBHAV',
     year: '2023',
     thumbnail: '/photos/EVENT_PROMOTION_REEL.png',

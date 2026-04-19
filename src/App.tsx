@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { io } from 'socket.io-client';
+import io from 'socket.io-client';
 import { MediaBin } from './components/MediaBin';
 import { PreviewMonitor } from './components/PreviewMonitor';
 import { Timeline } from './components/Timeline';
@@ -7,12 +7,12 @@ import { Inspector } from './components/Inspector';
 import { Project, EditorState, GradeMode, EditorTool, SequencePart } from './types';
 import { PROJECTS } from './constants';
 import { parseDurationToSeconds } from './lib/utils';
-import { Github, Twitter, Youtube, Mail, Film, Command, GripVertical, GripHorizontal, Maximize2, Minimize2, Laptop, Smartphone, Library, SquarePlay, Compass } from 'lucide-react';
+import { Github, Twitter, Youtube, Mail, Film, Command, GripVertical, GripHorizontal, Maximize2, Minimize2, Laptop, Smartphone, Library, SquarePlay, Compass, Fingerprint } from 'lucide-react';
 
 export default function App() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [mobileTab, setMobileTab] = useState<'SPHERE' | 'LIBRARY' | 'EDITOR' | 'ASSETS'>('SPHERE');
+  const [mobileTab, setMobileTab] = useState<'SPHERE' | 'LIBRARY' | 'EDITOR' | 'ASSETS' | 'IDENTITY'>('SPHERE');
   const [state, setState] = useState<EditorState>({
     currentTime: 10,
     isPlaying: false,
@@ -49,13 +49,32 @@ export default function App() {
 
   // Socket Connection
   useEffect(() => {
-    // Fetch initial state immediately via API to avoid delay
-    fetch('/api/state')
+    // Debug health check
+    fetch('/api/health')
       .then(res => res.json())
-      .then(data => {
-        setCheckpoint(data);
-      })
-      .catch(err => console.error('Error fetching shared state:', err));
+      .then(data => console.log('[API] Health check:', data))
+      .catch(err => console.warn('[API] Health check failed:', err));
+
+    // Fetch initial state immediately via API to avoid delay
+    // Added a small delay to ensure server is ready in some environments
+    const initFetch = () => {
+      fetch('/api/state')
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+          return res.json();
+        })
+        .then(data => {
+          console.log('[API] Shared state loaded:', Object.keys(data).length, 'projects');
+          setCheckpoint(data);
+        })
+        .catch(err => {
+          console.error('Error fetching shared state:', err);
+          // Retry after 2 seconds if it failed
+          setTimeout(initFetch, 2000);
+        });
+    };
+
+    setTimeout(initFetch, 500);
 
     socketRef.current = io({
       reconnectionAttempts: 5,
@@ -190,59 +209,121 @@ export default function App() {
     };
   }, [onMouseMove, stopResizing]);
 
-  // Sequence Generation Logic: Creating the professional multi-track default
+  // Sequence Generation Logic: Hardcoded defaults per user request
   const generateSequence = (project: Project): SequencePart[] => {
     const duration = parseDurationToSeconds(project.duration);
+    const title = project.title.toUpperCase();
     
-    // Professional High-Quality Split (Alternating V1 and V2)
-    // This is the "embedded" default behavior requested by the user
-    return [
-      {
-        id: `v1-intro-${project.id}`,
-        start: 0,
-        end: duration * 0.15,
-        type: 'NORMAL' as const,
-        label: `V1: Establishment`
-      },
-      {
-        id: `v2-peak1-${project.id}`,
-        start: duration * 0.15,
-        end: duration * 0.35,
-        type: 'HIGHLIGHT' as const,
-        label: `V2: Visual Highlight`
-      },
-      {
-        id: `v1-mid-${project.id}`,
-        start: duration * 0.35,
-        end: duration * 0.55,
-        type: 'NORMAL' as const,
-        label: `V1: Content Core`
-      },
-      {
-        id: `v2-peak2-${project.id}`,
-        start: duration * 0.55,
-        end: duration * 0.75,
-        type: 'HIGHLIGHT' as const,
-        label: `V2: Key Moment`
-      },
-      {
-        id: `v1-bridge-${project.id}`,
-        start: duration * 0.75,
-        end: duration * 0.90,
-        type: 'NORMAL' as const,
-        label: `V1: Narrative Shift`
-      },
-      {
-        id: `v2-finale-${project.id}`,
-        start: duration * 0.90,
-        end: duration,
-        type: 'HIGHLIGHT' as const,
-        label: `V2: Climax Edit`
-      }
-    ].map(p => ({
-      ...p,
-      end: Math.min(p.end, duration)
-    })).filter(p => (p.end - p.start) > 0.05);
+    const createPart = (id: string, start: number, end: number, type: 'NORMAL' | 'HIGHLIGHT', label: string) => ({
+      id: `${id}-${project.id}-${Math.random().toString(36).substr(2, 4)}`,
+      start,
+      end: Math.min(end, duration),
+      type,
+      label
+    });
+
+    let parts: SequencePart[] = [];
+
+    switch(title) {
+      case 'TEXTURE MOTION EDIT':
+        parts = [
+          createPart('v2-1', 0, 13, 'HIGHLIGHT', 'V2'),
+          createPart('v1-1', 13, 65, 'NORMAL', 'V1'),
+          createPart('v2-2', 65, 100, 'HIGHLIGHT', 'V2')
+        ];
+        break;
+      case 'SHORT FILM':
+        parts = [
+          createPart('v2-1', 0, 7, 'HIGHLIGHT', 'V2'),
+          createPart('v1-1', 7, 32, 'NORMAL', 'V1'),
+          createPart('v2-2', 32, 50, 'HIGHLIGHT', 'V2'),
+          createPart('v1-2', 50, 72, 'NORMAL', 'V1')
+        ];
+        break;
+      case 'PRODUCT ANIMATION':
+        parts = [
+          createPart('v2-1', 0, 7, 'HIGHLIGHT', 'V2'),
+          createPart('v1-1', 7, 24, 'NORMAL', 'V1'),
+          createPart('v2-2', 24, 35, 'HIGHLIGHT', 'V2')
+        ];
+        break;
+      case 'PROMOTIONAL EDIT':
+        parts = [
+          createPart('v2-1', 0, 2, 'HIGHLIGHT', 'V2'),
+          createPart('v1-1', 2, 4, 'NORMAL', 'V1'),
+          createPart('v2-2', 4, 12, 'HIGHLIGHT', 'V2'),
+          createPart('v1-2', 12, 23, 'NORMAL', 'V1'),
+          createPart('v2-3', 23, 37, 'HIGHLIGHT', 'V2')
+        ];
+        break;
+      case 'MASKING EDIT PRE NIMBUS':
+        parts = [
+          createPart('v2-1', 0, 6, 'HIGHLIGHT', 'V2'),
+          createPart('v1-1', 6, 14, 'NORMAL', 'V1'),
+          createPart('v2-2', 14, 24, 'HIGHLIGHT', 'V2'),
+          createPart('v1-2', 24, 32, 'NORMAL', 'V1'),
+          createPart('v2-3', 32, 36, 'HIGHLIGHT', 'V2'),
+          createPart('v1-3', 36, 46, 'NORMAL', 'V1')
+        ];
+        break;
+      case 'ORIENTATION REEL':
+        parts = [
+          createPart('v2-0', 0, 0, 'HIGHLIGHT', 'V2'),
+          createPart('v1-1', 0, 6, 'NORMAL', 'V1'),
+          createPart('v2-1', 6, 20, 'HIGHLIGHT', 'V2'),
+          createPart('v1-2', 20, 37, 'NORMAL', 'V1'),
+          createPart('v2-2', 37, 44, 'HIGHLIGHT', 'V2'),
+          createPart('v1-3', 44, 61, 'NORMAL', 'V1'),
+          createPart('v2-3', 61, 64, 'HIGHLIGHT', 'V2')
+        ];
+        break;
+      
+      case 'EVENT PROMOTION REEL':
+        parts = [
+          createPart('v2-0', 0, 0, 'HIGHLIGHT', 'V2'),
+          createPart('v1-1', 0, 19, 'NORMAL', 'V1'),
+          createPart('v2-1', 19, 29, 'HIGHLIGHT', 'V2'),
+          createPart('v1-2', 29, 31, 'NORMAL', 'V1'),
+          createPart('v2-2', 31, 36, 'HIGHLIGHT', 'V2'),
+          createPart('v1-3', 36, 45, 'NORMAL', 'V1'),
+          createPart('v2-3', 45, 59, 'HIGHLIGHT', 'V2'),
+          createPart('v1-4', 59, 62, 'NORMAL', 'V1'),
+          createPart('v2-4', 62, 78, 'HIGHLIGHT', 'V2')
+        ];
+        break;
+      case 'PROMOTIONAL REEL':
+        parts = [
+          createPart('v2-1', 0, 13, 'HIGHLIGHT', 'V2'),
+          createPart('v1-1', 13, 34, 'NORMAL', 'V1'),
+          createPart('v2-2', 34, 37, 'HIGHLIGHT', 'V2')
+        ];
+        break;
+      case 'ZEN GARDEN':
+        parts = [
+          createPart('v2-1', 0, 3, 'HIGHLIGHT', 'V2'),
+          createPart('v1-1', 3, 17, 'NORMAL', 'V1'),
+          createPart('v2-2', 17, 27, 'HIGHLIGHT', 'V2'),
+          createPart('v1-2', 27, 34, 'NORMAL', 'V1'),
+          createPart('v2-3', 34, 40, 'HIGHLIGHT', 'V2'),
+          createPart('v1-3', 40, 53, 'NORMAL', 'V1')
+        ];
+        break;
+      case 'WEEDING MOTION ANIMATION':
+        parts = [
+          createPart('v2-1', 0, 6, 'HIGHLIGHT', 'V2'),
+          createPart('v1-1', 6, 31, 'NORMAL', 'V1'),
+          createPart('v2-2', 31, 44, 'HIGHLIGHT', 'V2'),
+          createPart('v1-2', 44, 50, 'NORMAL', 'V1')
+        ];
+        break;
+      default:
+        // One continuous linear sequence at V2 track only
+        parts = [
+          createPart('v2-full', 0, duration, 'HIGHLIGHT', 'V2')
+        ];
+    }
+    
+    return parts.filter(p => (p.end - p.start) > 0.05);
   };
 
   const handleProjectSelect = useCallback((p: Project) => {
@@ -857,6 +938,15 @@ export default function App() {
                    </div>
                 )}
 
+                {mobileTab === 'IDENTITY' && (
+                   <div className="absolute inset-0 flex flex-col bg-[#050505]">
+                      <Inspector 
+                        selectedProject={state.selectedProject}
+                        isPlaying={state.isPlaying}
+                      />
+                   </div>
+                )}
+
                 {mobileTab === 'EDITOR' && (
                    <div className="absolute inset-0 flex flex-col">
                       <div className="h-[70%]">
@@ -934,6 +1024,13 @@ export default function App() {
                 >
                   <SquarePlay size={20} />
                   <span className="text-[9px] font-black uppercase tracking-widest">Edit</span>
+                </button>
+                <button 
+                  onClick={() => setMobileTab('IDENTITY')}
+                  className={`flex flex-col items-center gap-1 flex-1 py-1 transition-all ${mobileTab === 'IDENTITY' ? 'text-editor-accent' : 'text-editor-muted'}`}
+                >
+                  <Fingerprint size={20} />
+                  <span className="text-[9px] font-black uppercase tracking-widest">Brand</span>
                 </button>
              </nav>
           </div>

@@ -22,6 +22,11 @@ async function startServer() {
 
   app.use(express.json());
 
+  // Health check
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok", time: new Date().toISOString() });
+  });
+
   // Initial state retrieval
   const getInitialState = () => {
     if (fs.existsSync(STATE_FILE)) {
