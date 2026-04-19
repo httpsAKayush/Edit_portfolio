@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-editor-bg: #121212;
+  --color-editor-panel: #1e1e1e;
+  --color-editor-border: #333333;
+  --color-editor-accent: #0078d4;
+  --color-editor-timeline: #252525;
+  --color-editor-text: #e0e0e0;
+  --color-editor-muted: #888888;
+
+  --animate-scan: scan 4s linear infinite;
+  --animate-noise: noise 0.2s steps(4) infinite;
+}
+
+@keyframes scan {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(100%); }
+}
+
+@keyframes noise {
+  0% { transform: translate(0,0); }
+  10% { transform: translate(-1%,-1%); }
+  20% { transform: translate(1%,1%); }
+  30% { transform: translate(-2%,1%); }
+  40% { transform: translate(1%,-2%); }
+  50% { transform: translate(-1%,1%); }
+  60% { transform: translate(1%,1%); }
+  70% { transform: translate(2%,-1%); }
+  80% { transform: translate(-1%,-1%); }
+  90% { transform: translate(1%,2%); }
+  100% { transform: translate(1%,-1%); }
+}
+
+.scanline {
+  background: linear-gradient(to bottom, transparent, rgba(0, 120, 212, 0.1), transparent);
+  height: 50px;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 10;
+  animation: var(--animate-scan);
+}
+
+.noise-overlay {
+  position: absolute;
+  inset: -20%;
+  width: 140%;
+  height: 140%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.04;
+  pointer-events: none;
+  animation: var(--animate-noise);
+}
+
+@layer base {
+  body {
+    @apply bg-editor-bg text-editor-text font-sans overflow-hidden;
+  }
+}
+
+/* Custom Scrollbars for that "App" feel */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-editor-bg;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-editor-border rounded-full hover:bg-editor-muted;
+}
