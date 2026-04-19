@@ -190,45 +190,90 @@ export default function App() {
     };
   }, [onMouseMove, stopResizing]);
 
-  // Sequence Generation Logic
-  const generateSequence = (project: Project) => {
+  // Sequence Generation Logic: Creating the professional multi-track default
+  const generateSequence = (project: Project): SequencePart[] => {
     const duration = parseDurationToSeconds(project.duration);
-    return [{
-      id: `p-full-${project.id}`,
-      start: 0,
-      end: duration,
-      type: 'HIGHLIGHT' as const,
-      label: `${project.title} - Master Clip`
-    }];
+    
+    // Professional High-Quality Split (Alternating V1 and V2)
+    // This is the "embedded" default behavior requested by the user
+    return [
+      {
+        id: `v1-intro-${project.id}`,
+        start: 0,
+        end: duration * 0.15,
+        type: 'NORMAL' as const,
+        label: `V1: Establishment`
+      },
+      {
+        id: `v2-peak1-${project.id}`,
+        start: duration * 0.15,
+        end: duration * 0.35,
+        type: 'HIGHLIGHT' as const,
+        label: `V2: Visual Highlight`
+      },
+      {
+        id: `v1-mid-${project.id}`,
+        start: duration * 0.35,
+        end: duration * 0.55,
+        type: 'NORMAL' as const,
+        label: `V1: Content Core`
+      },
+      {
+        id: `v2-peak2-${project.id}`,
+        start: duration * 0.55,
+        end: duration * 0.75,
+        type: 'HIGHLIGHT' as const,
+        label: `V2: Key Moment`
+      },
+      {
+        id: `v1-bridge-${project.id}`,
+        start: duration * 0.75,
+        end: duration * 0.90,
+        type: 'NORMAL' as const,
+        label: `V1: Narrative Shift`
+      },
+      {
+        id: `v2-finale-${project.id}`,
+        start: duration * 0.90,
+        end: duration,
+        type: 'HIGHLIGHT' as const,
+        label: `V2: Climax Edit`
+      }
+    ].map(p => ({
+      ...p,
+      end: Math.min(p.end, duration)
+    })).filter(p => (p.end - p.start) > 0.05);
   };
 
   const handleProjectSelect = useCallback((p: Project) => {
-    // Priority:
-    // 1. Global Checkpoint (Synced from server)
-    // 2. Local Storage (Previous session)
-    // 3. Default Generated Sequence
-    
+    // Standardizing the default timeline across all projects
+    // This ensures a professional multi-track split (V1/V2) is always the starting point
     let sequence: SequencePart[] = generateSequence(p);
     
-    // 1. Check Global Checkpoint first
+    // Check Global Checkpoint for potential user-saved overrides
     if (checkpoint[p.id]) {
-      console.log(`[INIT] Loading sequence from Global Checkpoint for ${p.id}`);
-      sequence = checkpoint[p.id];
+      const globalSeq = checkpoint[p.id];
+      
+      // If the global checkpoint is valid and not a single clip, use it
+      if (globalSeq.length > 1) {
+        console.log(`[INIT] Loading shared checkpoint for ${p.id}`);
+        sequence = globalSeq;
+      } else {
+        console.log(`[INIT] Upgrading legacy checkpoint for ${p.id}`);
+      }
     } else {
-      // 2. Fallback to Local Storage
+      // Fallback to Local Storage only if it contains complex edits
       const saved = localStorage.getItem(`sequence_${p.id}`);
       if (saved) {
-        console.log(`[INIT] Loading sequence from Local Storage for ${p.id}`);
         try {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 1) {
+            console.log(`[INIT] Loading from Local Storage for ${p.id}`);
             sequence = parsed;
           }
         } catch (e) {
           console.error("Failed to parse saved sequence", e);
         }
-      } else {
-        console.log(`[INIT] Using default generated sequence for ${p.id}`);
       }
     }
 
