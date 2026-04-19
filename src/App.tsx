@@ -212,114 +212,122 @@ export default function App() {
   // Sequence Generation Logic: Hardcoded defaults per user request
   const generateSequence = (project: Project): SequencePart[] => {
     const duration = parseDurationToSeconds(project.duration);
-    const title = project.title.toUpperCase();
+    const rawTitle = project.title || '';
+    const title = rawTitle.trim().toUpperCase();
     
-    const createPart = (id: string, start: number, end: number, type: 'NORMAL' | 'HIGHLIGHT', label: string) => ({
-      id: `${id}-${project.id}-${Math.random().toString(36).substr(2, 4)}`,
+    // Normalizing titles for matching
+    const normalizedTitle = title
+      .replace('PROMOTIONAL', 'PROMOTION')
+      .replace(/_/g, ' ');
+
+    console.log(`[SEQ] Generating sequence for: "${rawTitle}" -> normalized: "${normalizedTitle}"`);
+
+    const createPart = (id: string, start: number, end: number, track: 'V1' | 'V2') => ({
+      id: `${track.toLowerCase()}-${id}-${project.id}-${Math.random().toString(36).substr(2, 4)}`,
       start,
       end: Math.min(end, duration),
-      type,
-      label
+      type: (track === 'V1' ? 'NORMAL' : 'HIGHLIGHT') as 'NORMAL' | 'HIGHLIGHT',
+      label: track
     });
 
     let parts: SequencePart[] = [];
 
-    switch(title) {
+    switch(normalizedTitle) {
       case 'TEXTURE MOTION EDIT':
         parts = [
-          createPart('v2-1', 0, 13, 'HIGHLIGHT', 'V2'),
-          createPart('v1-1', 13, 65, 'NORMAL', 'V1'),
-          createPart('v2-2', 65, 100, 'HIGHLIGHT', 'V2')
+          createPart('t1', 0, 13, 'V2'),
+          createPart('t2', 13, 65, 'V1'),
+          createPart('t3', 65, duration, 'V2')
         ];
         break;
       case 'SHORT FILM':
         parts = [
-          createPart('v2-1', 0, 7, 'HIGHLIGHT', 'V2'),
-          createPart('v1-1', 7, 32, 'NORMAL', 'V1'),
-          createPart('v2-2', 32, 50, 'HIGHLIGHT', 'V2'),
-          createPart('v1-2', 50, 72, 'NORMAL', 'V1')
+          createPart('s1', 0, 7, 'V2'),
+          createPart('s2', 7, 32, 'V1'),
+          createPart('s3', 32, 50, 'V2'),
+          createPart('s4', 50, duration, 'V1')
         ];
         break;
       case 'PRODUCT ANIMATION':
         parts = [
-          createPart('v2-1', 0, 7, 'HIGHLIGHT', 'V2'),
-          createPart('v1-1', 7, 24, 'NORMAL', 'V1'),
-          createPart('v2-2', 24, 35, 'HIGHLIGHT', 'V2')
+          createPart('pa1', 0, 7, 'V2'),
+          createPart('pa2', 7, 24, 'V1'),
+          createPart('pa3', 24, duration, 'V2')
         ];
         break;
+      case 'PROMOTION EDIT':
       case 'PROMOTIONAL EDIT':
         parts = [
-          createPart('v2-1', 0, 2, 'HIGHLIGHT', 'V2'),
-          createPart('v1-1', 2, 4, 'NORMAL', 'V1'),
-          createPart('v2-2', 4, 12, 'HIGHLIGHT', 'V2'),
-          createPart('v1-2', 12, 23, 'NORMAL', 'V1'),
-          createPart('v2-3', 23, 37, 'HIGHLIGHT', 'V2')
+          createPart('pe1', 0, 2, 'V2'),
+          createPart('pe2', 2, 4, 'V1'),
+          createPart('pe3', 4, 12, 'V2'),
+          createPart('pe4', 12, 23, 'V1'),
+          createPart('pe5', 23, duration, 'V2')
         ];
         break;
       case 'MASKING EDIT PRE NIMBUS':
         parts = [
-          createPart('v2-1', 0, 6, 'HIGHLIGHT', 'V2'),
-          createPart('v1-1', 6, 14, 'NORMAL', 'V1'),
-          createPart('v2-2', 14, 24, 'HIGHLIGHT', 'V2'),
-          createPart('v1-2', 24, 32, 'NORMAL', 'V1'),
-          createPart('v2-3', 32, 36, 'HIGHLIGHT', 'V2'),
-          createPart('v1-3', 36, 46, 'NORMAL', 'V1')
-        ];
-        break;
-      case 'ORIENTATION REEL':
-        parts = [
-          createPart('v2-0', 0, 0, 'HIGHLIGHT', 'V2'),
-          createPart('v1-1', 0, 6, 'NORMAL', 'V1'),
-          createPart('v2-1', 6, 20, 'HIGHLIGHT', 'V2'),
-          createPart('v1-2', 20, 37, 'NORMAL', 'V1'),
-          createPart('v2-2', 37, 44, 'HIGHLIGHT', 'V2'),
-          createPart('v1-3', 44, 61, 'NORMAL', 'V1'),
-          createPart('v2-3', 61, 64, 'HIGHLIGHT', 'V2')
+          createPart('m1', 0, 6, 'V2'),
+          createPart('m2', 6, 14, 'V1'),
+          createPart('m3', 14, 24, 'V2'),
+          createPart('m4', 24, 32, 'V1'),
+          createPart('m5', 32, 36, 'V2'),
+          createPart('m6', 36, duration, 'V1')
         ];
         break;
       
-      case 'EVENT PROMOTION REEL':
+      case 'ORIENTATION REEL':
         parts = [
-          createPart('v2-0', 0, 0, 'HIGHLIGHT', 'V2'),
-          createPart('v1-1', 0, 19, 'NORMAL', 'V1'),
-          createPart('v2-1', 19, 29, 'HIGHLIGHT', 'V2'),
-          createPart('v1-2', 29, 31, 'NORMAL', 'V1'),
-          createPart('v2-2', 31, 36, 'HIGHLIGHT', 'V2'),
-          createPart('v1-3', 36, 45, 'NORMAL', 'V1'),
-          createPart('v2-3', 45, 59, 'HIGHLIGHT', 'V2'),
-          createPart('v1-4', 59, 62, 'NORMAL', 'V1'),
-          createPart('v2-4', 62, 78, 'HIGHLIGHT', 'V2')
+          createPart('or1', 0, 6, 'V1'),
+          createPart('or2', 6, 20, 'V2'),
+          createPart('or3', 20, 37, 'V1'),
+          createPart('or4', 37, 44, 'V2'),
+          createPart('or5', 44, 61, 'V1'),
+          createPart('or6', 61, duration, 'V2')
         ];
         break;
+      case 'EVENT PROMOTION REEL':
+        parts = [
+          createPart('ev1', 0, 19, 'V1'),
+          createPart('ev2', 19, 29, 'V2'),
+          createPart('ev3', 29, 31, 'V1'),
+          createPart('ev4', 31, 36, 'V2'),
+          createPart('ev5', 36, 45, 'V1'),
+          createPart('ev6', 45, 59, 'V2'),
+          createPart('ev7', 59, 62, 'V1'),
+          createPart('ev8', 62, duration, 'V2')
+        ];
+        break;
+      case 'PROMOTION REEL':
       case 'PROMOTIONAL REEL':
         parts = [
-          createPart('v2-1', 0, 13, 'HIGHLIGHT', 'V2'),
-          createPart('v1-1', 13, 34, 'NORMAL', 'V1'),
-          createPart('v2-2', 34, 37, 'HIGHLIGHT', 'V2')
+          createPart('pr1', 0, 13, 'V2'),
+          createPart('pr2', 13, 34, 'V1'),
+          createPart('pr3', 34, duration, 'V2')
         ];
         break;
       case 'ZEN GARDEN':
         parts = [
-          createPart('v2-1', 0, 3, 'HIGHLIGHT', 'V2'),
-          createPart('v1-1', 3, 17, 'NORMAL', 'V1'),
-          createPart('v2-2', 17, 27, 'HIGHLIGHT', 'V2'),
-          createPart('v1-2', 27, 34, 'NORMAL', 'V1'),
-          createPart('v2-3', 34, 40, 'HIGHLIGHT', 'V2'),
-          createPart('v1-3', 40, 53, 'NORMAL', 'V1')
+          createPart('z1', 0, 3, 'V2'),
+          createPart('z2', 3, 17, 'V1'),
+          createPart('z3', 17, 27, 'V2'),
+          createPart('z4', 27, 34, 'V1'),
+          createPart('z5', 34, 40, 'V2'),
+          createPart('z6', 40, duration, 'V1')
         ];
         break;
       case 'WEEDING MOTION ANIMATION':
         parts = [
-          createPart('v2-1', 0, 6, 'HIGHLIGHT', 'V2'),
-          createPart('v1-1', 6, 31, 'NORMAL', 'V1'),
-          createPart('v2-2', 31, 44, 'HIGHLIGHT', 'V2'),
-          createPart('v1-2', 44, 50, 'NORMAL', 'V1')
+          createPart('w1', 0, 6, 'V2'),
+          createPart('w2', 6, 31, 'V1'),
+          createPart('w3', 31, 44, 'V2'),
+          createPart('w4', 44, duration, 'V1')
         ];
         break;
       default:
-        // One continuous linear sequence at V2 track only
+        console.log(`[SEQ] No specific case for "${normalizedTitle}", using default V2 track.`);
         parts = [
-          createPart('v2-full', 0, duration, 'HIGHLIGHT', 'V2')
+          createPart('v2-full', 0, duration, 'V2')
         ];
     }
     
@@ -329,34 +337,49 @@ export default function App() {
   const handleProjectSelect = useCallback((p: Project) => {
     // Standardizing the default timeline across all projects
     // This ensures a professional multi-track split (V1/V2) is always the starting point
-    let sequence: SequencePart[] = generateSequence(p);
+    const defaultSequence = generateSequence(p);
+    let sequence: SequencePart[] = defaultSequence;
     
+    // List of "Special" titles that MUST use the hardcoded logic
+    const SPECIAL_TITLES = [
+      'TEXTURE MOTION EDIT', 'SHORT FILM', 'PRODUCT ANIMATION', 
+      'PROMOTION EDIT', 'MASKING EDIT PRE NIMBUS', 'ORIENTATION REEL', 
+      'EVENT PROMOTION REEL', 'PROMOTION REEL', 'ZEN GARDEN', 
+      'WEEDING MOTION ANIMATION', 'MASKING EDIT REEL'
+    ];
+
+    const normalizedTitle = p.title.trim().toUpperCase()
+      .replace('PROMOTIONAL', 'PROMOTION')
+      .replace(/_/g, ' ');
+
+    const isSpecialProject = SPECIAL_TITLES.includes(normalizedTitle);
+
     // Check Global Checkpoint for potential user-saved overrides
-    if (checkpoint[p.id]) {
+    if (isSpecialProject) {
+      // For user-defined special projects, we ALWAYS force the hardcoded sequence
+      // to ensure consistency with the requested case method
+      console.log(`[INIT] Force-resetting ${p.id} to hardcoded default (Special Project)`);
+      sequence = defaultSequence;
+    } else if (checkpoint[p.id]) {
       const globalSeq = checkpoint[p.id];
       
-      // If the global checkpoint is valid and not a single clip, use it
-      if (globalSeq.length > 1) {
-        console.log(`[INIT] Loading shared checkpoint for ${p.id}`);
-        sequence = globalSeq;
+      // If it's a standard project, we only accept the checkpoint if it looks like real user edits
+      // Otherwise, we force the default continuous sequence
+      const isLegacy = globalSeq.some(part => part.id.includes('v1-intro') || part.id.includes('v2-peak1'));
+      
+      if (globalSeq.length > 1 && !isLegacy) {
+         console.log(`[INIT] Loading shared checkpoint for ${p.id}. Type of first part: ${globalSeq[0]?.type}`);
+         sequence = globalSeq;
       } else {
-        console.log(`[INIT] Upgrading legacy checkpoint for ${p.id}`);
+        console.log(`[INIT] Upgrading legacy or forcing default for ${p.id}. Sequence length: ${defaultSequence.length}`);
+        sequence = defaultSequence;
       }
     } else {
-      // Fallback to Local Storage only if it contains complex edits
-      const saved = localStorage.getItem(`sequence_${p.id}`);
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 1) {
-            console.log(`[INIT] Loading from Local Storage for ${p.id}`);
-            sequence = parsed;
-          }
-        } catch (e) {
-          console.error("Failed to parse saved sequence", e);
-        }
-      }
+      console.log(`[INIT] No checkpoint for ${p.id}, using default sequence.`);
+      sequence = defaultSequence;
     }
+
+    console.log(`[INIT] Final sequence for ${p.title} has ${sequence.length} parts. First part track: ${sequence[0]?.type === 'NORMAL' ? 'V1' : 'V2'}`);
 
     setState(prev => ({ 
       ...prev, 
@@ -367,7 +390,7 @@ export default function App() {
       selectedTool: 'SELECT'
     }));
     setMobileTab('EDITOR');
-  }, [checkpoint]);
+  }, [checkpoint, generateSequence]);
 
   // Effect to persist sequence changes to local storage
   useEffect(() => {
