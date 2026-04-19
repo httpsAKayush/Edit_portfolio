@@ -44,13 +44,20 @@ async function startServer() {
 
     socket.on("sequence:update", (data: { projectId: string, sequence: any[] }) => {
       const { projectId, sequence } = data;
+      console.log(`[SOCKET] Received update for ${projectId}. Sequence parts: ${sequence.length}`);
       sharedState[projectId] = sequence;
       
       // Persist to file
-      fs.writeFileSync(STATE_FILE, JSON.stringify(sharedState, null, 2));
+      try {
+        fs.writeFileSync(STATE_FILE, JSON.stringify(sharedState, null, 2));
+        console.log(`[STATE] Persisted state to ${STATE_FILE}`);
+      } catch (e) {
+        console.error(`[ERR] Failed to write state file:`, e);
+      }
       
       // Broadcast to all other clients
       socket.broadcast.emit("sequence:updated", { projectId, sequence });
+      console.log(`[SOCKET] Broadcasted update for ${projectId} to all clients`);
     });
 
     socket.on("disconnect", () => {

@@ -12,7 +12,7 @@ import { Github, Twitter, Youtube, Mail, Film, Command, GripVertical, GripHorizo
 export default function App() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [mobileTab, setMobileTab] = useState<'SPHERE' | 'LIBRARY' | 'EDITOR'>('SPHERE');
+  const [mobileTab, setMobileTab] = useState<'SPHERE' | 'LIBRARY' | 'EDITOR' | 'ASSETS'>('SPHERE');
   const [state, setState] = useState<EditorState>({
     currentTime: 10,
     isPlaying: false,
@@ -49,13 +49,34 @@ export default function App() {
 
   // Socket Connection
   useEffect(() => {
-    socketRef.current = io();
+    // Fetch initial state immediately via API to avoid delay
+    fetch('/api/state')
+      .then(res => res.json())
+      .then(data => {
+        setCheckpoint(data);
+      })
+      .catch(err => console.error('Error fetching shared state:', err));
+
+    socketRef.current = io({
+      reconnectionAttempts: 5,
+      timeout: 10000,
+    });
+
+    socketRef.current.on('connect', () => {
+      console.log('[SOCKET] Connected to sync server');
+    });
+
+    socketRef.current.on('connect_error', (error: any) => {
+      console.error('[SOCKET] Connection error:', error);
+    });
 
     socketRef.current.on('init:state', (state: { [projectId: string]: SequencePart[] }) => {
+      console.log('[SOCKET] Initial shared state received');
       setCheckpoint(state);
     });
 
     socketRef.current.on('sequence:updated', (data: { projectId: string; sequence: SequencePart[] }) => {
+      console.log(`[SOCKET] Remote checkpoint received for ${data.projectId}`);
       setCheckpoint(prev => ({ ...prev, [data.projectId]: data.sequence }));
     });
 
@@ -65,6 +86,28 @@ export default function App() {
       }
     };
   }, []);
+
+  // Real-time Sync: Auto-update active project when a remote checkpoint arrives
+  useEffect(() => {
+    const activeId = state.selectedProject?.id;
+    if (activeId && checkpoint[activeId]) {
+      const globalSeq = checkpoint[activeId];
+      const localSeq = state.selectedProject?.sequence || [];
+      
+      // If global is different, sync it automatically if we are in EDITOR mode
+      // This ensures that the user sees their colleagues' changes instantly
+      if (state.viewMode === 'EDITOR' && JSON.stringify(globalSeq) !== JSON.stringify(localSeq)) {
+        console.log(`[SYNC] Auto-updating live timeline for ${activeId}`);
+        setState(prev => {
+          if (!prev.selectedProject || prev.selectedProject.id !== activeId) return prev;
+          return {
+            ...prev,
+            selectedProject: { ...prev.selectedProject, sequence: globalSeq }
+          };
+        });
+      }
+    }
+  }, [checkpoint, state.selectedProject?.id, state.viewMode]);
 
   // Resize State
   const [leftPanelWidth, setLeftPanelWidth] = useState(24);
@@ -160,20 +203,32 @@ export default function App() {
   };
 
   const handleProjectSelect = useCallback((p: Project) => {
-    // For this special "Main Edit" mode, we'll favor the generated sequence 
-    // to ensure it matches the user's latest track preference (V2)
-    let sequence = generateSequence(p);
+    // Priority:
+    // 1. Global Checkpoint (Synced from server)
+    // 2. Local Storage (Previous session)
+    // 3. Default Generated Sequence
     
-    // Check local storage for saved sequence ONLY if it has more than 1 part (user started editing)
-    const saved = localStorage.getItem(`sequence_${p.id}`);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 1) {
-          sequence = parsed;
+    let sequence: SequencePart[] = generateSequence(p);
+    
+    // 1. Check Global Checkpoint first
+    if (checkpoint[p.id]) {
+      console.log(`[INIT] Loading sequence from Global Checkpoint for ${p.id}`);
+      sequence = checkpoint[p.id];
+    } else {
+      // 2. Fallback to Local Storage
+      const saved = localStorage.getItem(`sequence_${p.id}`);
+      if (saved) {
+        console.log(`[INIT] Loading sequence from Local Storage for ${p.id}`);
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 1) {
+            sequence = parsed;
+          }
+        } catch (e) {
+          console.error("Failed to parse saved sequence", e);
         }
-      } catch (e) {
-        console.error("Failed to parse saved sequence", e);
+      } else {
+        console.log(`[INIT] Using default generated sequence for ${p.id}`);
       }
     }
 
@@ -186,7 +241,7 @@ export default function App() {
       selectedTool: 'SELECT'
     }));
     setMobileTab('EDITOR');
-  }, []);
+  }, [checkpoint]);
 
   // Effect to persist sequence changes to local storage
   useEffect(() => {
@@ -261,21 +316,20 @@ export default function App() {
   }, []);
 
   const handleSaveCheckpoint = useCallback(() => {
-    setState(prev => {
-      if (!prev.selectedProject?.id || !prev.selectedProject?.sequence) return prev;
-      const sequence = prev.selectedProject.sequence;
-      const projectId = prev.selectedProject.id;
-      
-      setCheckpoint(c => ({ ...c, [projectId]: sequence }));
-      
-      // Emit to server for global sync
-      if (socketRef.current) {
-        socketRef.current.emit('sequence:update', { projectId, sequence });
-      }
-      
-      return prev;
-    });
-  }, []);
+    const activeProject = state.selectedProject;
+    if (!activeProject?.id || !activeProject?.sequence) return;
+    
+    const { id: projectId, sequence } = activeProject;
+    
+    // Update local state first (Optimistic)
+    setCheckpoint(c => ({ ...c, [projectId]: sequence }));
+    
+    // Emit to server for global sync
+    if (socketRef.current) {
+      console.log(`[CLIENT] Emitting update for project: ${projectId}`);
+      socketRef.current.emit('sequence:update', { projectId, sequence });
+    }
+  }, [state.selectedProject?.id, state.selectedProject?.sequence]);
 
   const handleRestoreCheckpoint = useCallback(() => {
     setState(prev => {
@@ -566,6 +620,14 @@ export default function App() {
              className={`px-2 py-0.5 rounded text-[8px] font-black tracking-widest border border-editor-accent/30 transition-all active:scale-95 ${state.isTimelineLocked ? 'text-red-500 bg-red-500/10' : 'text-green-500 bg-green-500/10 animate-pulse'}`}
            >
              {state.isTimelineLocked ? 'LOCKED' : 'LIVE'}
+           </button>
+           <button 
+             onClick={() => setMobileTab('LIBRARY')}
+             className={`px-2 py-1 flex items-center gap-1.5 rounded-md border transition-all active:scale-95 ${mobileTab === 'LIBRARY' ? 'bg-editor-accent text-white border-editor-accent' : 'bg-editor-panel text-editor-muted border-editor-border'}`}
+             title="Assets"
+           >
+             <Library size={10} />
+             <span className="text-[8px] font-black uppercase tracking-tighter">Assets</span>
            </button>
         </div>
       </header>

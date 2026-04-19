@@ -1,0 +1,32 @@
+{
+  "p2": [
+    {
+      "id": "p-full-p2_gqm3_viyj",
+      "start": 0,
+      "end": 12.863443312698678,
+      "type": "HIGHLIGHT",
+      "label": "TEXTURE MOTION EDIT - Master Clip"
+    },
+    {
+      "id": "p-full-p2_gqm3_bn7p",
+      "start": 12.863443312698678,
+      "end": 12.98513906186902,
+      "type": "NORMAL",
+      "label": "TEXTURE MOTION EDIT - Master Clip"
+    },
+    {
+      "id": "p-full-p2_nma8_6axz",
+      "start": 12.98513906186902,
+      "end": 65.19189850520898,
+      "type": "NORMAL",
+      "label": "TEXTURE MOTION EDIT - Master Clip"
+    },
+    {
+      "id": "p-full-p2_nma8_jp8d",
+      "start": 65.19189850520898,
+      "end": 101,
+      "type": "HIGHLIGHT",
+      "label": "TEXTURE MOTION EDIT - Master Clip"
+    }
+  ]
+}

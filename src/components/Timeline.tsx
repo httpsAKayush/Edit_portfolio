@@ -244,7 +244,7 @@ export const Timeline = memo(function Timeline({
         icon={Layers}
         actions={
           <div className="flex items-center gap-2 md:gap-3">
-             <div className="hidden sm:flex items-center gap-1.5 border-r border-editor-border pr-3">
+             <div className="flex items-center gap-1.5 border-editor-border sm:border-r sm:pr-3">
                 <button 
                   onClick={onSaveCheckpoint}
                   className="px-2 py-0.5 bg-editor-panel border border-editor-border text-white rounded text-[9px] font-bold uppercase hover:bg-editor-accent/20 transition-all active:scale-95"
