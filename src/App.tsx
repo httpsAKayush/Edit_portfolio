@@ -308,11 +308,11 @@ export default function App() {
         break;
       case 'ZEN GARDEN':
         parts = [
-          createPart('z1', 0, 3, 'V2'),
-          createPart('z2', 3, 17, 'V1'),
+          createPart('z1', 0, 0, 'V2'),
+          createPart('z2', 0, 17, 'V1'),
           createPart('z3', 17, 27, 'V2'),
-          createPart('z4', 27, 34, 'V1'),
-          createPart('z5', 34, 40, 'V2'),
+          createPart('z4', 27, 35, 'V1'),
+          createPart('z5', 35, 40, 'V2'),
           createPart('z6', 40, duration, 'V1')
         ];
         break;
