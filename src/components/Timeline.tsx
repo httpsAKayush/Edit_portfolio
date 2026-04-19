@@ -243,8 +243,8 @@ export const Timeline = memo(function Timeline({
         title={viewMode === 'DISCOVERY' ? 'Discovery: Spatial Path [PROXIMITY_MAPPING]' : 'Sequence: Portfolio_V4_MASTER'} 
         icon={Layers}
         actions={
-          <div className="flex items-center gap-3">
-             <div className="flex items-center gap-1.5 border-r border-editor-border pr-3">
+          <div className="flex items-center gap-2 md:gap-3">
+             <div className="hidden sm:flex items-center gap-1.5 border-r border-editor-border pr-3">
                 <button 
                   onClick={onSaveCheckpoint}
                   className="px-2 py-0.5 bg-editor-panel border border-editor-border text-white rounded text-[9px] font-bold uppercase hover:bg-editor-accent/20 transition-all active:scale-95"
@@ -274,47 +274,47 @@ export const Timeline = memo(function Timeline({
                 </button>
              </div>
              {viewMode === 'DISCOVERY' && (
-               <div className="flex items-center gap-1.5 border-r border-editor-border pr-3">
+               <div className="flex items-center gap-1 md:gap-1.5 md:border-r md:border-editor-border md:pr-3">
                   <button 
                     onClick={() => onTimeUpdate(0)}
-                    className="p-1 text-editor-muted hover:text-white transition-colors"
+                    className="p-1 text-editor-muted hover:text-white transition-colors hidden md:block"
                   >
                     <RotateCcw size={12} />
                   </button>
                   <button 
                     onClick={onTogglePlay}
-                    className="flex items-center gap-1.5 px-2 py-0.5 bg-editor-accent text-white rounded text-[9px] font-bold uppercase shadow-[0_0_10px_#0078d4] hover:brightness-110 active:scale-95 transition-all"
+                    className="flex items-center gap-1 px-1.5 md:px-2 py-0.5 bg-editor-accent text-white rounded text-[8px] md:text-[9px] font-bold uppercase shadow-[0_0_10px_#0078d4] hover:brightness-110 active:scale-95 transition-all"
                   >
                     {isPlaying ? <Pause size={10} /> : <Play size={10} />}
-                    <span>{isPlaying ? 'Pause' : 'Play Path'}</span>
+                    <span className="md:ml-0.5">{isPlaying ? 'Pause' : 'Play Path'}</span>
                   </button>
                </div>
              )}
-             <div className="flex items-center gap-1 bg-editor-bg px-1.5 py-0.5 rounded border border-editor-border text-[10px]">
+             <div className="flex items-center gap-1 bg-editor-bg px-1 md:px-1.5 py-0.5 rounded border border-editor-border text-[8px] md:text-[10px]">
                 {isLocked ? (
-                  <div className="flex items-center gap-1 text-red-500 animate-pulse">
-                    <Lock size={10} />
+                  <div className="flex items-center gap-0.5 md:gap-1 text-red-500 animate-pulse">
+                    <Lock size={9} className="md:w-2.5 md:h-2.5" />
                     <span className="font-bold">LOCKED</span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1 text-green-500">
-                    <Unlock size={10} />
+                  <div className="flex items-center gap-0.5 md:gap-1 text-green-500">
+                    <Unlock size={9} className="md:w-2.5 md:h-2.5" />
                     <span className="font-bold">ACTIVE</span>
                   </div>
                 )}
              </div>
-             <div className="flex items-center gap-1 bg-editor-bg px-1.5 py-0.5 rounded border border-editor-border text-[10px] text-editor-muted">
+             <div className="hidden sm:flex items-center gap-1 bg-editor-bg px-1.5 py-0.5 rounded border border-editor-border text-[10px] text-editor-muted">
                 <Magnet size={10} className="text-editor-accent shadow-[0_0_5px_#0078d4]" />
                 <span className="font-bold">SNAPPING: ON</span>
              </div>
-             <div className="flex items-center gap-2 group/zoom">
+             <div className="flex items-center gap-1.5 md:gap-2 group/zoom">
                 <button 
                   onClick={() => handleZoomChange(Math.max(0, zoom - 0.1))}
-                  className="hover:scale-110 transition-transform"
+                  className="hover:scale-110 transition-transform hidden sm:block"
                 >
                   <ZoomOut size={12} className="text-editor-muted hover:text-white cursor-pointer" />
                 </button>
-                <div className="w-24 h-1 bg-editor-bg rounded-full relative group-hover/zoom:h-1.5 transition-all">
+                <div className="w-16 md:w-24 h-1 bg-editor-bg rounded-full relative group-hover/zoom:h-1.5 transition-all">
                    <input 
                      type="range"
                      min="0"
@@ -329,13 +329,13 @@ export const Timeline = memo(function Timeline({
                      style={{ width: `${zoom * 100}%` }}
                    />
                    <div 
-                     className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white border border-editor-accent shadow-lg pointer-events-none transition-all duration-300" 
+                     className="absolute top-1/2 -translate-y-1/2 w-2 md:w-3 h-2 md:h-3 rounded-full bg-white border border-editor-accent shadow-lg pointer-events-none transition-all duration-300" 
                      style={{ left: `${zoom * 100}%`, transform: 'translate(-50%, -50%)' }}
                    />
                 </div>
                 <button 
                   onClick={() => handleZoomChange(Math.min(1, zoom + 0.1))}
-                  className="hover:scale-110 transition-transform"
+                  className="hover:scale-110 transition-transform hidden sm:block"
                 >
                   <ZoomIn size={12} className="text-editor-muted hover:text-white cursor-pointer" />
                 </button>
@@ -347,7 +347,7 @@ export const Timeline = memo(function Timeline({
       <div className="flex-1 flex overflow-hidden relative">
         {/* Tool Sidebar */}
         {viewMode !== 'DISCOVERY' && (
-          <div className="w-10 border-r border-editor-border bg-editor-panel flex flex-col items-center py-3 gap-1.5 flex-shrink-0 z-30 shadow-xl overflow-hidden relative">
+          <div className="w-8 md:w-10 border-r border-editor-border bg-editor-panel flex flex-col items-center py-2 md:py-3 gap-1 md:gap-1.5 flex-shrink-0 z-30 shadow-xl overflow-hidden relative">
              {isLocked && (
                <div className="absolute inset-0 bg-black/40 z-50 flex items-center justify-center backdrop-blur-[2px]">
                  <Lock size={12} className="text-white/40" />
@@ -358,77 +358,79 @@ export const Timeline = memo(function Timeline({
                active={selectedTool === 'SELECT'} 
                onClick={() => !isLocked && onSelectTool?.('SELECT')}
                tooltip={isLocked ? "Editing Locked" : "Selection Tool (V)"} 
+               size={14}
              />
              <EditorButton 
                icon={Scissors} 
                active={selectedTool === 'RAZOR'} 
                onClick={() => !isLocked && onSelectTool?.('RAZOR')}
                tooltip={isLocked ? "Editing Locked" : "Razor Blade (C)"} 
+               size={14}
              />
              <EditorButton 
                icon={Ruler} 
                active={selectedTool === 'STRETCH'} 
                onClick={() => !isLocked && onSelectTool?.('STRETCH')}
                tooltip={isLocked ? "Editing Locked" : "Rate Stretch (R)"} 
+               size={14}
              />
              <EditorButton 
                icon={Type} 
                active={selectedTool === 'TEXT'} 
                onClick={() => !isLocked && onSelectTool?.('TEXT')}
                tooltip={isLocked ? "Editing Locked" : "Type Tool (T)"} 
+               size={14}
              />
           </div>
         )}
 
         {/* --- TRACK HEADERS (Fixed Left) --- */}
-        <div className="w-24 border-r border-editor-border bg-editor-panel flex flex-col flex-shrink-0 z-20 overflow-hidden shadow-r-lg">
+        <div className="w-16 md:w-24 border-r border-editor-border bg-editor-panel flex flex-col flex-shrink-0 z-20 overflow-hidden shadow-r-lg">
            {/* Header Header Spacer */}
-           <div className="h-7 bg-editor-panel border-b border-editor-border/50 flex items-center px-2">
-              <span className="text-[8px] font-black text-editor-muted tracking-widest uppercase">Tracks</span>
+           <div className="h-6 md:h-7 bg-editor-panel border-b border-editor-border/50 flex items-center px-1.5 md:px-2">
+              <span className="text-[7px] md:text-[8px] font-black text-editor-muted tracking-widest uppercase">Tracks</span>
            </div>
            
            {viewMode === 'DISCOVERY' ? (
-              <div className="h-16 border-b border-white/5 flex flex-col justify-center px-3 transition-opacity">
-                 <div className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-3 bg-editor-accent rounded-full shadow-[0_0_8px_#0078d4]" />
-                    <span className="text-[10px] font-black text-editor-accent">PATH</span>
+              <div className="h-12 md:h-16 border-b border-white/5 flex flex-col justify-center px-2 md:px-3 transition-opacity">
+                 <div className="flex items-center gap-1 md:gap-1.5">
+                    <div className="w-1 md:w-1.5 h-2 md:h-3 bg-editor-accent rounded-full shadow-[0_0_8px_#0078d4]" />
+                    <span className="text-[8px] md:text-[10px] font-black text-editor-accent">PATH</span>
                  </div>
-                 <span className="text-[9px] truncate uppercase tracking-widest text-editor-muted mt-1 font-bold">Guided Mode</span>
+                 <span className="text-[7px] md:text-[9px] truncate uppercase tracking-widest text-editor-muted mt-0.5 md:mt-1 font-bold">Guided</span>
               </div>
            ) : (
               <>
                  {/* V2 Header */}
-                 <div className={`h-16 border-b border-white/5 flex flex-col justify-center px-3 transition-opacity duration-300 ${!isV2Visible ? 'opacity-30' : ''}`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-1.5 h-3 bg-editor-accent rounded-full shadow-[0_0_8px_#0078d4] animate-pulse" />
-                        <span className="text-[10px] font-black text-sky-400">V2</span>
+                 <div className={`h-12 md:h-16 border-b border-white/5 flex flex-col justify-center px-2 md:px-3 transition-opacity duration-300 ${!isV2Visible ? 'opacity-30' : ''}`}>
+                    <div className="flex items-center justify-between font-mono">
+                      <div className="flex items-center gap-1 md:gap-1.5">
+                        <div className="w-1 md:w-1.5 h-2 md:h-3 bg-editor-accent rounded-full shadow-[0_0_8px_#0078d4] animate-pulse" />
+                        <span className="text-[8px] md:text-[10px] font-black text-sky-400">V2</span>
                       </div>
                       <button 
                         onClick={(e) => { e.stopPropagation(); onToggleTrack?.('V2'); }}
-                        className="p-1 hover:bg-white/10 rounded-full transition-colors"
+                        className="p-0.5 md:p-1 hover:bg-white/10 rounded-full transition-colors"
                       >
-                         {isV2Visible ? <Eye size={10} className="text-editor-accent" /> : <EyeOff size={10} className="text-editor-muted" />}
+                         {isV2Visible ? <Eye size={9} className="text-editor-accent md:w-2.5 md:h-2.5" /> : <EyeOff size={9} className="text-editor-muted md:w-2.5 md:h-2.5" />}
                       </button>
                     </div>
-                    <span className="text-[9px] truncate uppercase tracking-widest text-editor-muted mt-1 font-bold">Main Edit</span>
                  </div>
 
                  {/* V1 Header */}
-                 <div className={`h-16 border-b border-white/5 flex flex-col justify-center px-3 transition-opacity duration-300 ${!isV1Visible ? 'opacity-30' : ''}`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-1.5 h-3 bg-emerald-500 rounded-full shadow-[0_0_8px_#10b981]" />
-                        <span className="text-[10px] font-black text-emerald-400">V1</span>
+                 <div className={`h-12 md:h-16 border-b border-white/5 flex flex-col justify-center px-2 md:px-3 transition-opacity duration-300 ${!isV1Visible ? 'opacity-30' : ''}`}>
+                    <div className="flex items-center justify-between font-mono">
+                      <div className="flex items-center gap-1 md:gap-1.5">
+                        <div className="w-1 md:w-1.5 h-2 md:h-3 bg-emerald-500 rounded-full shadow-[0_0_8px_#10b981]" />
+                        <span className="text-[8px] md:text-[10px] font-black text-emerald-400">V1</span>
                       </div>
                       <button 
                         onClick={(e) => { e.stopPropagation(); onToggleTrack?.('V1'); }}
-                        className="p-1 hover:bg-white/10 rounded-full transition-colors"
+                        className="p-0.5 md:p-1 hover:bg-white/10 rounded-full transition-colors"
                       >
-                         {isV1Visible ? <Eye size={10} className="text-editor-accent" /> : <EyeOff size={10} className="text-editor-muted" />}
+                         {isV1Visible ? <Eye size={9} className="text-editor-accent md:w-2.5 md:h-2.5" /> : <EyeOff size={9} className="text-editor-muted md:w-2.5 md:h-2.5" />}
                       </button>
                     </div>
-                    <span className="text-[9px] truncate uppercase tracking-widest text-emerald-500/60 mt-1">Normal Flow</span>
                  </div>
               </>
            )}
@@ -499,24 +501,25 @@ export const Timeline = memo(function Timeline({
                     <div className="relative h-16 border-b border-white/5 flex items-center bg-editor-accent/5 overflow-hidden">
                        <div className="flex-1 h-full relative">
                           {/* Continuous Background Track */}
-                          <div className="absolute inset-x-0 h-10 top-3 bg-white/[0.03] border border-white/10 rounded-sm" />
+                          <div className="absolute h-10 top-3 bg-white/[0.03] border border-white/10 rounded-sm" style={{ width: totalDuration * pixelsPerSecond }} />
                           
                           {/* Dynamic Path Indicator */}
                           <div 
-                             className="absolute h-1 top-[11px] left-0 bg-editor-accent shadow-[0_0_15px_#0078d4] transition-all duration-300"
-                             style={{ width: `${(currentTime / totalDuration) * 100}%` }}
+                             className="absolute h-1 top-[11px] left-0 bg-editor-accent shadow-[0_0_15px_#0078d4]"
+                             style={{ width: currentTime * pixelsPerSecond }}
                           />
 
                           {/* Node Markers (Visualization Only) */}
                           {PROJECTS.map((project, idx) => {
-                             const pos = (idx / PROJECTS.length) * 100;
-                             const isActive = Math.abs((currentTime / totalDuration) * 100 - pos) < (100 / PROJECTS.length / 2);
+                             const posPx = (idx / PROJECTS.length) * totalDuration * pixelsPerSecond;
+                             const nodeWidthPx = (1 / PROJECTS.length) * totalDuration * pixelsPerSecond;
+                             const isActive = Math.abs(currentTime * pixelsPerSecond - posPx) < (nodeWidthPx / 2);
                              
                              return (
                                 <div 
                                    key={project.id}
                                    className="absolute h-10 top-3 flex flex-col items-center group/node transition-all"
-                                   style={{ left: `${pos}%`, width: `${(1 / PROJECTS.length) * 100}%` }}
+                                   style={{ left: posPx, width: nodeWidthPx }}
                                 >
                                    <div className={`mt-3 w-1.5 h-1.5 rounded-full transition-all duration-500 ${isActive ? 'bg-editor-accent scale-150 shadow-[0_0_8px_#0078d4]' : 'bg-white/20'}`} />
                                    <div className={`mt-2 text-[8px] font-black uppercase tracking-widest truncate max-w-full px-2 transition-colors duration-500 ${isActive ? 'text-white' : 'text-editor-muted'}`}>

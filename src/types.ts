@@ -39,6 +39,8 @@ export interface CareerMilestone {
 export interface EditorState {
   currentTime: number;
   isPlaying: boolean;
+  discoveryTime: number;
+  discoveryIsPlaying: boolean;
   selectedProject: Project | null;
   gradeMode: GradeMode;
   showGuides: boolean;
@@ -46,4 +48,6 @@ export interface EditorState {
   timelineZoom: number;
   selectedTool: EditorTool;
   isTimelineLocked: boolean;
+  isMuted: boolean;
+  volume: number;
 }

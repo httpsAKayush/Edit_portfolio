@@ -69,7 +69,7 @@ export const PROJECTS: Project[] = [
     tags: ['Travel', 'Cinematic'],
     description: 'A sweeping cinematic journey through the dunes of the Sahara.',
     idealGrade: 'CINEMA',
-    aspectRatio: '8:3.5',
+    aspectRatio: '9:16',
     spherePosition: [-8, 0, 0]
   },
   {

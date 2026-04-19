@@ -10,17 +10,17 @@ interface PanelHeaderProps {
 
 export function PanelHeader({ title, icon: Icon, actions }: PanelHeaderProps) {
   return (
-    <div className="flex items-center justify-between px-3 py-1.5 border-b border-editor-border bg-editor-panel select-none">
-      <div className="flex items-center gap-2">
-        {Icon && <Icon size={14} className="text-editor-muted" />}
-        <span className="text-[11px] uppercase tracking-wider font-semibold text-editor-muted">
+    <div className="flex items-center justify-between px-2 md:px-3 py-1 md:py-1.5 border-b border-editor-border bg-editor-panel select-none">
+      <div className="flex items-center gap-1.5 md:gap-2 overflow-hidden">
+        {Icon && <Icon size={12} className="text-editor-muted shrink-0 md:w-3.5 md:h-3.5" />}
+        <span className="text-[9px] md:text-[11px] uppercase tracking-wider font-semibold text-editor-muted truncate">
           {title}
         </span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 md:gap-2 shrink-0">
         {actions}
         <button className="text-editor-muted hover:text-white transition-colors">
-          <MoreVertical size={14} />
+          <MoreVertical size={12} className="md:w-3.5 md:h-3.5" />
         </button>
       </div>
     </div>
@@ -39,7 +39,7 @@ export function Tooltip({ label }: TooltipProps) {
   );
 }
 
-export function EditorButton({ icon: Icon, active, onClick, tooltip }: { icon: LucideIcon, active?: boolean, onClick?: () => void, tooltip?: string }) {
+export function EditorButton({ icon: Icon, active, onClick, tooltip, size = 16 }: { icon: LucideIcon, active?: boolean, onClick?: () => void, tooltip?: string, size?: number }) {
   return (
     <div className="relative group">
       <button 
@@ -48,7 +48,7 @@ export function EditorButton({ icon: Icon, active, onClick, tooltip }: { icon: L
           active ? 'bg-editor-accent text-white' : 'text-editor-muted hover:bg-editor-border hover:text-white'
         }`}
       >
-        <Icon size={16} />
+        <Icon size={size} />
       </button>
       {tooltip && <Tooltip label={tooltip} />}
     </div>

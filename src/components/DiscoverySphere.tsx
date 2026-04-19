@@ -173,7 +173,7 @@ interface DiscoverySphereProps {
   freeRoamState: { rotation: [number, number, number], zoom: number };
 }
 
-function CameraRig({ currentTime, totalDuration, isFreeRoam, freeRoamState, selectedProject }: any) {
+function CameraRig({ currentTime, totalDuration, isFreeRoam, freeRoamState, selectedProject, userZoomOffset = 0 }: any) {
   const { camera } = useThree();
   const targetPos = useRef(new THREE.Vector3());
   const lookAtPos = useRef(new THREE.Vector3());
@@ -209,7 +209,7 @@ function CameraRig({ currentTime, totalDuration, isFreeRoam, freeRoamState, sele
     lookAtPos.current.z = THREE.MathUtils.damp(lookAtPos.current.z, curvePoint.z, 15, delta);
 
     // Calculate ideal camera position (stable radius orbital)
-    const camRadius = 12.5;
+    const camRadius = 12.5 + userZoomOffset;
     const idealDir = curvePoint.clone().normalize();
     const finalTarget = idealDir.multiplyScalar(camRadius);
     
@@ -222,7 +222,7 @@ function CameraRig({ currentTime, totalDuration, isFreeRoam, freeRoamState, sele
     if (selectedProject?.spherePosition) {
        const [px, py, pz] = selectedProject.spherePosition;
        const projectVec = new THREE.Vector3(px, py, pz);
-       finalTarget.lerp(projectVec.clone().normalize().multiplyScalar(11), 0.3);
+       finalTarget.lerp(projectVec.clone().normalize().multiplyScalar(11 + userZoomOffset), 0.3);
        lookAtPos.current.lerp(projectVec, 0.3);
     }
 
@@ -239,8 +239,35 @@ function CameraRig({ currentTime, totalDuration, isFreeRoam, freeRoamState, sele
 }
 
 export function DiscoverySphere({ currentTime, totalDuration, onSelectProject, selectedProject, isFreeRoam, freeRoamState }: DiscoverySphereProps) {
+  const [userZoom, setUserZoom] = React.useState(0);
+  const lastTouchDist = useRef<number | null>(null);
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].pageX - e.touches[1].pageX,
+        e.touches[0].pageY - e.touches[1].pageY
+      );
+
+      if (lastTouchDist.current !== null) {
+        const delta = (dist - lastTouchDist.current) * 0.05;
+        setUserZoom(prev => Math.max(-8, Math.min(15, prev - delta)));
+      }
+      lastTouchDist.current = dist;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    lastTouchDist.current = null;
+  };
+
   return (
-    <div className="w-full h-full bg-black relative">
+    <div 
+      className="w-full h-full bg-black relative"
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
+    >
       <Canvas shadows dpr={[1, 2]}>
         <PerspectiveCamera makeDefault position={[0, 0, 10]} fov={50} />
         
@@ -261,6 +288,7 @@ export function DiscoverySphere({ currentTime, totalDuration, onSelectProject, s
             isFreeRoam={isFreeRoam}
             freeRoamState={freeRoamState}
             selectedProject={selectedProject}
+            userZoomOffset={userZoom}
           />
         )}
 
@@ -292,42 +320,18 @@ export function DiscoverySphere({ currentTime, totalDuration, onSelectProject, s
       </Canvas>
 
       {/* Discovery UI Overlays */}
-      <div className="absolute inset-x-0 top-3 flex flex-col items-center pointer-events-none z-10 px-6">
+      <div className="absolute inset-x-0 top-20 md:top-6 flex flex-col items-center pointer-events-none z-10 px-6">
          <div className="bg-black/40 backdrop-blur-xl border border-white/10 px-6 py-2 rounded-xl flex items-center gap-8 shadow-2xl scale-90 origin-top">
-            <div className="flex flex-col gap-0.5">
-               <span className="text-[7px] text-editor-accent uppercase tracking-[0.3em] font-black italic">Spatial_Coordinate</span>
-               <div className="flex items-baseline gap-1.5">
-                  <span className="text-xl font-mono text-white tabular-nums tracking-tighter">
-                    {Math.floor((currentTime / totalDuration) * 100).toString().padStart(3, '0')}
-                  </span>
-                  <span className="text-[10px] text-editor-muted font-mono">/ RAD</span>
-               </div>
-            </div>
-            
-            <div className="w-px h-8 bg-gradient-to-b from-transparent via-white/20 to-transparent" />
-            
-            <div className="flex flex-col gap-0.5">
-               <span className="text-[7px] text-white/40 uppercase tracking-[0.3em]">Infrastructure</span>
-               <div className="flex items-baseline gap-1.5">
-                  <span className="text-xl font-mono text-white tabular-nums tracking-tighter">
-                    {PROJECTS.length.toString().padStart(2, '0')}
-                  </span>
-                  <span className="text-[10px] text-editor-muted font-mono">NODES</span>
-               </div>
-            </div>
-
-            <div className="w-px h-8 bg-gradient-to-b from-transparent via-white/20 to-transparent" />
-
-            <div className="flex flex-col gap-0.5 w-24">
+            <div className="flex flex-col gap-0.5 w-auto min-w-[120px]">
                <span className="text-[7px] text-white/40 uppercase tracking-[0.3em]">Focus_Target</span>
-               <div className="relative h-3 overflow-hidden">
+               <div className="relative h-4 overflow-hidden">
                   <AnimatePresence mode="wait">
                     <motion.span 
                       key={Math.round((currentTime / totalDuration) * PROJECTS.length) % PROJECTS.length}
                       initial={{ opacity: 0, y: 5 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -5 }}
-                      className="absolute inset-0 text-[10px] font-black text-white italic truncate uppercase"
+                      className="absolute inset-0 text-[11px] font-black text-white italic truncate uppercase tracking-tight"
                     >
                       {PROJECTS[Math.round((currentTime / totalDuration) * PROJECTS.length) % PROJECTS.length]?.title || "SYSTEM_IDLE"}
                     </motion.span>

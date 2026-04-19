@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { io } from 'socket.io-client';
 import { MediaBin } from './components/MediaBin';
 import { PreviewMonitor } from './components/PreviewMonitor';
 import { Timeline } from './components/Timeline';
@@ -6,22 +7,29 @@ import { Inspector } from './components/Inspector';
 import { Project, EditorState, GradeMode, EditorTool, SequencePart } from './types';
 import { PROJECTS } from './constants';
 import { parseDurationToSeconds } from './lib/utils';
-import { Github, Twitter, Youtube, Mail, Film, Command, GripVertical, GripHorizontal, Maximize2, Minimize2 } from 'lucide-react';
+import { Github, Twitter, Youtube, Mail, Film, Command, GripVertical, GripHorizontal, Maximize2, Minimize2, Laptop, Smartphone, Library, SquarePlay, Compass } from 'lucide-react';
 
 export default function App() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'SPHERE' | 'LIBRARY' | 'EDITOR'>('SPHERE');
   const [state, setState] = useState<EditorState>({
     currentTime: 10,
     isPlaying: false,
+    discoveryTime: 10,
+    discoveryIsPlaying: false,
     selectedProject: null,
     showGuides: true,
     viewMode: 'DISCOVERY',
     timelineZoom: 0,
     selectedTool: 'SELECT',
     isTimelineLocked: true,
+    isMuted: false,
+    volume: 0.8,
     gradeMode: (localStorage.getItem('gradeMode') as GradeMode) || 'REC709'
   });
+
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
 
   // Effect to persist editor settings
   useEffect(() => {
@@ -39,6 +47,25 @@ export default function App() {
   const [visibleTracks, setVisibleTracks] = useState<Set<string>>(new Set(['V2']));
   const [checkpoint, setCheckpoint] = useState<{ [projectId: string]: SequencePart[] }>({});
 
+  // Socket Connection
+  useEffect(() => {
+    socketRef.current = io();
+
+    socketRef.current.on('init:state', (state: { [projectId: string]: SequencePart[] }) => {
+      setCheckpoint(state);
+    });
+
+    socketRef.current.on('sequence:updated', (data: { projectId: string; sequence: SequencePart[] }) => {
+      setCheckpoint(prev => ({ ...prev, [data.projectId]: data.sequence }));
+    });
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
+  }, []);
+
   // Resize State
   const [leftPanelWidth, setLeftPanelWidth] = useState(24);
   const [discoveryPanelHeight, setDiscoveryPanelHeight] = useState(18);
@@ -49,6 +76,7 @@ export default function App() {
   const setBottomPanelHeight = state.viewMode === 'DISCOVERY' ? setDiscoveryPanelHeight : setEditorPanelHeight;
   
   const isResizing = useRef<string | null>(null);
+  const socketRef = useRef<any>(null);
 
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
@@ -69,7 +97,16 @@ export default function App() {
       setIsFullscreen(!!document.fullscreenElement);
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 768);
+    };
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   const startResizing = (id: string) => {
@@ -148,6 +185,7 @@ export default function App() {
       viewMode: 'EDITOR',
       selectedTool: 'SELECT'
     }));
+    setMobileTab('EDITOR');
   }, []);
 
   // Effect to persist sequence changes to local storage
@@ -162,6 +200,19 @@ export default function App() {
   }, []);
 
   const togglePlay = useCallback(() => {
+    setState(prev => {
+      if (prev.viewMode === 'DISCOVERY') {
+        return { ...prev, discoveryIsPlaying: !prev.discoveryIsPlaying };
+      }
+      return { ...prev, isPlaying: !prev.isPlaying };
+    });
+  }, []);
+
+  const toggleDiscoveryPlay = useCallback(() => {
+    setState(prev => ({ ...prev, discoveryIsPlaying: !prev.discoveryIsPlaying }));
+  }, []);
+
+  const toggleEditorPlay = useCallback(() => {
     setState(prev => ({ ...prev, isPlaying: !prev.isPlaying }));
   }, []);
 
@@ -170,17 +221,58 @@ export default function App() {
   }, []);
 
   const updateTime = useCallback((t: number) => {
+    setState(prev => {
+      if (prev.viewMode === 'DISCOVERY') {
+        return { ...prev, discoveryTime: t };
+      }
+      return { ...prev, currentTime: t };
+    });
+  }, []);
+
+  const updateDiscoveryTime = useCallback((t: number) => {
+    setState(prev => ({ ...prev, discoveryTime: t }));
+  }, []);
+
+  const updateEditorTime = useCallback((t: number) => {
     setState(prev => ({ ...prev, currentTime: t }));
   }, []);
 
+  const toggleMute = useCallback(() => {
+    setState(prev => ({ ...prev, isMuted: !prev.isMuted }));
+  }, []);
+
+  const updateVolume = useCallback((v: number) => {
+    setState(prev => ({ ...prev, volume: v }));
+  }, []);
+
+  const toggleLock = useCallback(() => {
+    setState(prev => ({ ...prev, isTimelineLocked: !prev.isTimelineLocked }));
+  }, []);
+
   const handleReturnToDiscovery = useCallback(() => {
-    setState(prev => ({ ...prev, viewMode: 'DISCOVERY', selectedProject: null, currentTime: 20 }));
+    setState(prev => ({ 
+      ...prev, 
+      viewMode: 'DISCOVERY', 
+      selectedProject: null, 
+      discoveryTime: 20,
+      discoveryIsPlaying: false 
+    }));
+    setMobileTab('SPHERE');
   }, []);
 
   const handleSaveCheckpoint = useCallback(() => {
     setState(prev => {
       if (!prev.selectedProject?.id || !prev.selectedProject?.sequence) return prev;
-      setCheckpoint(c => ({ ...c, [prev.selectedProject!.id]: prev.selectedProject!.sequence! }));
+      const sequence = prev.selectedProject.sequence;
+      const projectId = prev.selectedProject.id;
+      
+      setCheckpoint(c => ({ ...c, [projectId]: sequence }));
+      
+      // Emit to server for global sync
+      if (socketRef.current) {
+        socketRef.current.emit('sequence:update', { projectId, sequence });
+      }
+      
       return prev;
     });
   }, []);
@@ -363,56 +455,68 @@ export default function App() {
     let interval: any;
     let lastTime = performance.now();
     
-    if (state.isPlaying) {
+    if (state.isPlaying || state.discoveryIsPlaying) {
       interval = setInterval(() => {
         const now = performance.now();
         const delta = (now - lastTime) / 1000;
         lastTime = now;
 
         setState(prev => {
-          const duration = prev.viewMode === 'EDITOR' && prev.selectedProject 
-            ? parseDurationToSeconds(prev.selectedProject.duration) 
-            : 100; // Discovery mode is 100 "temporal units"
-          let nextTime = prev.currentTime + delta;
-          
-          if (nextTime >= duration) nextTime = 0;
+          let updates: Partial<typeof prev> = {};
 
-          if (prev.viewMode === 'EDITOR' && prev.selectedProject?.sequence && visibleTracks.size > 0) {
-             const sequence = prev.selectedProject.sequence;
-             const currentPart = sequence.find(p => nextTime >= p.start && nextTime < p.end);
-             
-             if (currentPart) {
-                const partTrack = currentPart.type === 'NORMAL' ? 'V1' : 'V2';
-                if (!visibleTracks.has(partTrack)) {
-                   const nextVisible = sequence.find(s => {
-                      const sTrack = s.type === 'NORMAL' ? 'V1' : 'V2';
-                      return s.start >= currentPart.end && visibleTracks.has(sTrack);
-                   });
-                   
-                   if (nextVisible) {
-                      nextTime = nextVisible.start;
-                   } else {
-                      const firstVisible = sequence.find(s => visibleTracks.has(s.type === 'NORMAL' ? 'V1' : 'V2'));
-                      nextTime = firstVisible ? firstVisible.start : 0;
-                   }
-                }
-             }
+          // 1. Handle Discovery Playback (Isolated)
+          if (prev.discoveryIsPlaying) {
+            const duration = 100;
+            let nextDiscoveryTime = prev.discoveryTime + delta;
+            if (nextDiscoveryTime >= duration) nextDiscoveryTime = 0;
+            updates.discoveryTime = nextDiscoveryTime;
           }
 
-          return {
-            ...prev,
-            currentTime: nextTime >= duration ? 0 : nextTime
-          };
+          // 2. Handle Editor Playback
+          if (prev.isPlaying) {
+            const duration = prev.selectedProject 
+              ? parseDurationToSeconds(prev.selectedProject.duration) 
+              : 100;
+            let nextTime = prev.currentTime + delta;
+            
+            if (nextTime >= duration) nextTime = 0;
+
+            if (prev.selectedProject?.sequence && visibleTracks.size > 0) {
+               const sequence = prev.selectedProject.sequence;
+               const currentPart = sequence.find(p => nextTime >= p.start && nextTime < p.end);
+               
+               if (currentPart) {
+                  const partTrack = currentPart.type === 'NORMAL' ? 'V1' : 'V2';
+                  if (!visibleTracks.has(partTrack)) {
+                     const nextVisible = sequence.find(s => {
+                        const sTrack = s.type === 'NORMAL' ? 'V1' : 'V2';
+                        return s.start >= currentPart.end && visibleTracks.has(sTrack);
+                     });
+                     
+                     if (nextVisible) {
+                        nextTime = nextVisible.start;
+                     } else {
+                        const firstVisible = sequence.find(s => visibleTracks.has(s.type === 'NORMAL' ? 'V1' : 'V2'));
+                        nextTime = firstVisible ? firstVisible.start : 0;
+                     }
+                  }
+               }
+            }
+            updates.currentTime = nextTime >= duration ? 0 : nextTime;
+          }
+
+          if (Object.keys(updates).length === 0) return prev;
+          return { ...prev, ...updates };
         });
-      }, 40); // Optimized for stability (approx 25fps)
+      }, 40);
     }
     return () => clearInterval(interval);
-  }, [state.isPlaying, visibleTracks, state.selectedProject?.sequence]);
+  }, [state.isPlaying, state.discoveryIsPlaying, visibleTracks, state.selectedProject?.sequence]);
 
   return (
     <div ref={containerRef} className="flex flex-col h-screen overflow-hidden bg-editor-bg select-none">
-      {/* OS Bar Style Header */}
-      <header className="h-8 border-b border-editor-border bg-editor-panel flex items-center justify-between px-3 text-[11px] font-medium z-50">
+      {/* OS Bar Style Header - Desktop Only */}
+      <header className="h-8 border-b border-editor-border bg-editor-panel hidden md:flex items-center justify-between px-3 text-[11px] font-medium z-50">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2 text-editor-accent">
             <Film size={14} className={state.isPlaying ? "animate-spin duration-[3000ms]" : ""} />
@@ -450,117 +554,287 @@ export default function App() {
         </div>
       </header>
 
+      {/* Mobile Header */}
+      <header className="h-10 border-b border-editor-border bg-editor-panel flex md:hidden items-center justify-between px-4 z-50">
+        <div className="flex items-center gap-2 text-editor-accent">
+          <Film size={16} className={state.isPlaying ? "animate-spin duration-[3000ms]" : ""} />
+          <span className="font-black tracking-tighter uppercase text-xs">Timeline Pro</span>
+        </div>
+        <div className="flex items-center gap-3">
+           <button 
+             onClick={toggleLock}
+             className={`px-2 py-0.5 rounded text-[8px] font-black tracking-widest border border-editor-accent/30 transition-all active:scale-95 ${state.isTimelineLocked ? 'text-red-500 bg-red-500/10' : 'text-green-500 bg-green-500/10 animate-pulse'}`}
+           >
+             {state.isTimelineLocked ? 'LOCKED' : 'LIVE'}
+           </button>
+        </div>
+      </header>
+
       <main className="flex-1 flex flex-col overflow-hidden relative">
-        {/* TOP SECTION */}
-        <div className="flex overflow-hidden" style={{ height: `${100 - bottomPanelHeight}%` }}>
-           {/* Left: Media Bin */}
-           {state.viewMode !== 'DISCOVERY' && (
-             <>
-               <div style={{ width: `${leftPanelWidth}%` }} className="h-full flex flex-col">
-                  <MediaBin 
-                    selectedId={state.selectedProject?.id} 
-                    onSelectProject={handleProjectSelect} 
+        {/* DESKTOP LAYOUT */}
+        {isDesktop && (
+          <div className="hidden md:flex flex-col h-full">
+            {/* TOP SECTION */}
+            <div className="flex overflow-hidden" style={{ height: `${100 - bottomPanelHeight}%` }}>
+               {/* Left: Media Bin */}
+               {state.viewMode !== 'DISCOVERY' && (
+                 <>
+                   <div style={{ width: `${leftPanelWidth}%` }} className="h-full flex flex-col">
+                      <MediaBin 
+                        selectedId={state.selectedProject?.id} 
+                        onSelectProject={handleProjectSelect} 
+                      />
+                   </div>
+
+                   {/* Vertical Resizer 1 */}
+                   <div 
+                     onMouseDown={() => startResizing('left-col')}
+                     className="w-1.5 flex flex-col items-center justify-center gap-1 group cursor-col-resize hover:bg-editor-accent/30 transition-colors z-30"
+                   >
+                      <div className="w-px h-full bg-editor-border group-hover:bg-editor-accent/50" />
+                      <div className="absolute py-2 bg-editor-panel border border-editor-border rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1 px-1">
+                         <div className="w-0.5 h-0.5 rounded-full bg-white/40" />
+                         <div className="w-0.5 h-0.5 rounded-full bg-white/40" />
+                         <div className="w-0.5 h-0.5 rounded-full bg-white/40" />
+                      </div>
+                   </div>
+                 </>
+               )}
+
+               {/* Middle: Preview Monitor */}
+               <div className="flex-1 h-full flex flex-col overflow-hidden">
+                  <PreviewMonitor 
+                    project={state.selectedProject || undefined} 
+                    currentTime={state.viewMode === 'DISCOVERY' ? state.discoveryTime : state.currentTime}
+                    isPlaying={state.viewMode === 'DISCOVERY' ? state.discoveryIsPlaying : state.isPlaying}
+                    onTogglePlay={state.viewMode === 'DISCOVERY' ? toggleDiscoveryPlay : togglePlay}
+                    gradeMode={state.gradeMode}
+                    showGuides={state.showGuides}
+                    onToggleGuides={toggleGuides}
+                    sequence={state.selectedProject?.sequence || discoverySequence}
+                    viewMode={state.viewMode}
+                    onSelectProject={handleProjectSelect}
+                    onReturnToDiscovery={handleReturnToDiscovery}
+                    isMuted={state.isMuted}
+                    onToggleMute={toggleMute}
+                    volume={state.volume}
+                    onVolumeChange={updateVolume}
                   />
                </div>
 
-               {/* Vertical Resizer 1 */}
-               <div 
-                 onMouseDown={() => startResizing('left-col')}
-                 className="w-1.5 flex flex-col items-center justify-center gap-1 group cursor-col-resize hover:bg-editor-accent/30 transition-colors z-30"
-               >
-                  <div className="w-px h-full bg-editor-border group-hover:bg-editor-accent/50" />
-                  <div className="absolute py-2 bg-editor-panel border border-editor-border rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1 px-1">
-                     <div className="w-0.5 h-0.5 rounded-full bg-white/40" />
-                     <div className="w-0.5 h-0.5 rounded-full bg-white/40" />
-                     <div className="w-0.5 h-0.5 rounded-full bg-white/40" />
-                  </div>
+               {/* Vertical Resizer 2 (Inspector) */}
+               {state.viewMode !== 'DISCOVERY' && (
+                 <>
+                   <div 
+                     onMouseDown={() => startResizing('inspector-col')}
+                     className="w-1.5 flex flex-col items-center justify-center gap-1 group cursor-col-resize hover:bg-editor-accent/30 transition-colors z-30 hidden xl:flex"
+                   >
+                      <div className="w-px h-full bg-editor-border group-hover:bg-editor-accent/50" />
+                   </div>
+
+                   {/* Right: Inspector */}
+                   <div style={{ width: `${inspectorWidth}%` }} className="h-full hidden xl:flex flex-col">
+                      <Inspector 
+                        selectedProject={state.selectedProject}
+                        isPlaying={state.isPlaying}
+                      />
+                   </div>
+                 </>
+               )}
+            </div>
+
+            {/* Horizontal Resizer */}
+            <div 
+              onMouseDown={() => startResizing('main-h')}
+              className="h-1.5 flex items-center justify-center group cursor-row-resize hover:bg-editor-accent/30 transition-colors z-30"
+            >
+               <div className="h-px w-full bg-editor-border group-hover:bg-editor-accent/50" />
+               <div className="absolute px-6 bg-editor-panel border border-editor-border rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 h-4">
+                  <div className="w-0.5 h-0.5 rounded-full bg-white/40" />
+                  <div className="w-0.5 h-0.5 rounded-full bg-white/40" />
+                  <div className="w-0.5 h-0.5 rounded-full bg-white/40" />
                </div>
-             </>
-           )}
+            </div>
 
-           {/* Middle: Preview Monitor */}
-           <div className="flex-1 h-full flex flex-col overflow-hidden">
-              <PreviewMonitor 
-                project={state.selectedProject || undefined} 
-                currentTime={state.currentTime}
-                isPlaying={state.isPlaying}
-                onTogglePlay={togglePlay}
-                gradeMode={state.gradeMode}
-                showGuides={state.showGuides}
-                onToggleGuides={toggleGuides}
-                sequence={state.selectedProject?.sequence || discoverySequence}
-                viewMode={state.viewMode}
-                onSelectProject={handleProjectSelect}
-                onReturnToDiscovery={handleReturnToDiscovery}
-              />
-           </div>
+            {/* BOTTOM SECTION: Timeline */}
+            <div style={{ height: `${bottomPanelHeight}%` }} className="overflow-hidden">
+               <Timeline 
+                 viewMode={state.viewMode}
+                 currentTime={state.viewMode === 'DISCOVERY' ? state.discoveryTime : state.currentTime}
+                 onTimeUpdate={state.viewMode === 'DISCOVERY' ? updateDiscoveryTime : updateTime}
+                 selectedTool={state.selectedTool}
+                 onSelectTool={(tool) => setState(prev => ({ ...prev, selectedTool: tool as any }))}
+                 onSplit={handleSplit}
+                 onUpdatePart={handleUpdatePart}
+                 isLocked={state.isTimelineLocked}
+                 sequence={state.viewMode === 'DISCOVERY' ? discoverySequence : state.selectedProject?.sequence}
+                 visibleTracks={visibleTracks}
+                 onToggleTrack={(id) => setVisibleTracks(prev => {
+                    const next = new Set(prev);
+                    if (next.has(id)) next.delete(id);
+                    else next.add(id);
+                    return next;
+                 })}
+                 project={state.selectedProject || { title: 'DISCOVERY_SPHERE', duration: '01:40' } as any}
+                 isPlaying={state.viewMode === 'DISCOVERY' ? state.discoveryIsPlaying : state.isPlaying}
+                 onTogglePlay={state.viewMode === 'DISCOVERY' ? toggleDiscoveryPlay : togglePlay}
+                 onSaveCheckpoint={handleSaveCheckpoint}
+                 onRestoreCheckpoint={handleRestoreCheckpoint}
+                 onResetTimeline={handleResetTimeline}
+                 hasCheckpoint={!!(state.selectedProject?.id && checkpoint[state.selectedProject.id])}
+               />
+            </div>
+          </div>
+        )}
 
-           {/* Vertical Resizer 2 (Inspector) */}
-           {state.viewMode !== 'DISCOVERY' && (
-             <>
-               <div 
-                 onMouseDown={() => startResizing('inspector-col')}
-                 className="w-1.5 flex flex-col items-center justify-center gap-1 group cursor-col-resize hover:bg-editor-accent/30 transition-colors z-30 hidden xl:flex"
-               >
-                  <div className="w-px h-full bg-editor-border group-hover:bg-editor-accent/50" />
-               </div>
+        {/* MOBILE LAYOUT (Tabbed) */}
+        {!isDesktop && (
+          <div className="flex md:hidden flex-col h-full">
+             <div className="flex-1 relative overflow-hidden">
+                {mobileTab === 'SPHERE' && (
+                   <div className="absolute inset-0 flex flex-col pt-10">
+                      <div className="h-[82%]">
+                         <PreviewMonitor 
+                           currentTime={state.discoveryTime}
+                           isPlaying={state.discoveryIsPlaying}
+                           onTogglePlay={toggleDiscoveryPlay}
+                           gradeMode={state.gradeMode}
+                           showGuides={state.showGuides}
+                           onToggleGuides={toggleGuides}
+                           sequence={discoverySequence}
+                           viewMode="DISCOVERY"
+                           onSelectProject={handleProjectSelect}
+                           onReturnToDiscovery={handleReturnToDiscovery}
+                           isMuted={state.isMuted}
+                           onToggleMute={toggleMute}
+                           volume={state.volume}
+                           onVolumeChange={updateVolume}
+                         />
+                      </div>
+                      <div className="flex-1 bg-editor-timeline border-t border-editor-border overflow-hidden">
+                         <Timeline 
+                           viewMode="DISCOVERY"
+                           currentTime={state.discoveryTime}
+                           onTimeUpdate={updateDiscoveryTime}
+                           selectedTool={state.selectedTool}
+                           onSelectTool={(tool) => setState(prev => ({ ...prev, selectedTool: tool as any }))}
+                           onSplit={handleSplit}
+                           onUpdatePart={handleUpdatePart}
+                           isLocked={state.isTimelineLocked}
+                           sequence={discoverySequence}
+                           visibleTracks={visibleTracks}
+                           onToggleTrack={(id) => setVisibleTracks(prev => {
+                              const next = new Set(prev);
+                              if (next.has(id)) next.delete(id);
+                              else next.add(id);
+                              return next;
+                           })}
+                           project={{ title: 'DISCOVERY_SPHERE', duration: '01:40' } as any}
+                           isPlaying={state.discoveryIsPlaying}
+                           onTogglePlay={toggleDiscoveryPlay}
+                           onSaveCheckpoint={handleSaveCheckpoint}
+                           onRestoreCheckpoint={handleRestoreCheckpoint}
+                           onResetTimeline={handleResetTimeline}
+                           hasCheckpoint={false}
+                         />
+                      </div>
+                   </div>
+                )}
 
-               {/* Right: Inspector */}
-               <div style={{ width: `${inspectorWidth}%` }} className="h-full hidden xl:flex flex-col">
-                  <Inspector 
-                    selectedProject={state.selectedProject}
-                    isPlaying={state.isPlaying}
-                  />
-               </div>
-             </>
-           )}
-        </div>
+                {mobileTab === 'LIBRARY' && (
+                   <div className="absolute inset-0 px-2 overflow-y-auto">
+                      <MediaBin 
+                        selectedId={state.selectedProject?.id} 
+                        onSelectProject={handleProjectSelect} 
+                      />
+                   </div>
+                )}
 
-        {/* Horizontal Resizer */}
-        <div 
-          onMouseDown={() => startResizing('main-h')}
-          className="h-1.5 flex items-center justify-center group cursor-row-resize hover:bg-editor-accent/30 transition-colors z-30"
-        >
-           <div className="h-px w-full bg-editor-border group-hover:bg-editor-accent/50" />
-           <div className="absolute px-6 bg-editor-panel border border-editor-border rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 h-4">
-              <div className="w-0.5 h-0.5 rounded-full bg-white/40" />
-              <div className="w-0.5 h-0.5 rounded-full bg-white/40" />
-              <div className="w-0.5 h-0.5 rounded-full bg-white/40" />
-           </div>
-        </div>
+                {mobileTab === 'EDITOR' && (
+                   <div className="absolute inset-0 flex flex-col">
+                      <div className="h-[70%]">
+                         <PreviewMonitor 
+                           project={state.selectedProject || undefined} 
+                           currentTime={state.currentTime}
+                           isPlaying={state.isPlaying}
+                           onTogglePlay={toggleEditorPlay}
+                           gradeMode={state.gradeMode}
+                           showGuides={state.showGuides}
+                           onToggleGuides={toggleGuides}
+                           sequence={state.selectedProject?.sequence || discoverySequence}
+                           viewMode={state.viewMode}
+                           onSelectProject={handleProjectSelect}
+                           onReturnToDiscovery={handleReturnToDiscovery}
+                           isMuted={state.isMuted}
+                           onToggleMute={toggleMute}
+                           volume={state.volume}
+                           onVolumeChange={updateVolume}
+                         />
+                      </div>
+                      <div className="flex-1 bg-editor-timeline border-t border-editor-border overflow-hidden">
+                         <Timeline 
+                           viewMode={state.viewMode}
+                           currentTime={state.currentTime}
+                           onTimeUpdate={updateEditorTime}
+                           selectedTool={state.selectedTool}
+                           onSelectTool={(tool) => setState(prev => ({ ...prev, selectedTool: tool as any }))}
+                           onSplit={handleSplit}
+                           onUpdatePart={handleUpdatePart}
+                           isLocked={state.isTimelineLocked}
+                           sequence={state.selectedProject?.sequence}
+                           visibleTracks={visibleTracks}
+                           onToggleTrack={(id) => setVisibleTracks(prev => {
+                              const next = new Set(prev);
+                              if (next.has(id)) next.delete(id);
+                              else next.add(id);
+                              return next;
+                           })}
+                           project={state.selectedProject || undefined}
+                           isPlaying={state.isPlaying}
+                           onTogglePlay={toggleEditorPlay}
+                           onSaveCheckpoint={handleSaveCheckpoint}
+                           onRestoreCheckpoint={handleRestoreCheckpoint}
+                           onResetTimeline={handleResetTimeline}
+                           hasCheckpoint={!!(state.selectedProject?.id && checkpoint[state.selectedProject.id])}
+                         />
+                      </div>
+                   </div>
+                )}
+             </div>
 
-        {/* BOTTOM SECTION: Timeline */}
-        <div style={{ height: `${bottomPanelHeight}%` }} className="overflow-hidden">
-           <Timeline 
-             viewMode={state.viewMode}
-             currentTime={state.currentTime}
-             onTimeUpdate={updateTime}
-             selectedTool={state.selectedTool}
-             onSelectTool={(tool) => setState(prev => ({ ...prev, selectedTool: tool as any }))}
-             onSplit={handleSplit}
-             onUpdatePart={handleUpdatePart}
-             isLocked={state.isTimelineLocked}
-             sequence={state.viewMode === 'DISCOVERY' ? discoverySequence : state.selectedProject?.sequence}
-             visibleTracks={visibleTracks}
-             onToggleTrack={(id) => setVisibleTracks(prev => {
-                const next = new Set(prev);
-                if (next.has(id)) next.delete(id);
-                else next.add(id);
-                return next;
-             })}
-             project={state.selectedProject || { title: 'DISCOVERY_SPHERE', duration: '01:40' } as any}
-             isPlaying={state.isPlaying}
-             onTogglePlay={togglePlay}
-             onSaveCheckpoint={handleSaveCheckpoint}
-             onRestoreCheckpoint={handleRestoreCheckpoint}
-             onResetTimeline={handleResetTimeline}
-             hasCheckpoint={!!(state.selectedProject?.id && checkpoint[state.selectedProject.id])}
-           />
-        </div>
+             {/* Mobile Tab Nav */}
+             <nav className="h-14 bg-editor-panel border-t border-editor-border flex items-center justify-around px-2 pb-safe">
+                <button 
+                  onClick={() => setMobileTab('SPHERE')}
+                  className={`flex flex-col items-center gap-1 flex-1 py-1 transition-all ${mobileTab === 'SPHERE' ? 'text-editor-accent' : 'text-editor-muted'}`}
+                >
+                  <Compass size={20} className={mobileTab === 'SPHERE' ? 'animate-pulse' : ''} />
+                  <span className="text-[9px] font-black uppercase tracking-widest">Explore</span>
+                </button>
+                <button 
+                  onClick={() => setMobileTab('LIBRARY')}
+                  className={`flex flex-col items-center gap-1 flex-1 py-1 transition-all ${mobileTab === 'LIBRARY' ? 'text-editor-accent' : 'text-editor-muted'}`}
+                >
+                  <Library size={20} />
+                  <span className="text-[9px] font-black uppercase tracking-widest">Assets</span>
+                </button>
+                <button 
+                  onClick={() => {
+                    if (state.selectedProject) setMobileTab('EDITOR');
+                    else setMobileTab('LIBRARY');
+                  }}
+                  className={`flex flex-col items-center gap-1 flex-1 py-1 transition-all ${mobileTab === 'EDITOR' ? 'text-editor-accent' : (state.selectedProject ? 'text-editor-muted' : 'text-editor-muted opacity-30')}`}
+                >
+                  <SquarePlay size={20} />
+                  <span className="text-[9px] font-black uppercase tracking-widest">Edit</span>
+                </button>
+             </nav>
+          </div>
+        )}
       </main>
 
-      {/* Status Bar */}
-      <footer className="h-6 border-t border-editor-border bg-editor-panel flex items-center justify-between px-3 text-[9px] text-editor-muted font-mono whitespace-nowrap overflow-hidden">
+      {/* Status Bar - Desktop Only */}
+      <footer className="h-6 border-t border-editor-border bg-editor-panel hidden md:flex items-center justify-between px-3 text-[9px] text-editor-muted font-mono whitespace-nowrap overflow-hidden">
         <div className="flex items-center gap-4">
            <div className="flex items-center gap-1.5 opacity-80">
               <div className="w-2 h-2 rounded-full bg-editor-accent animate-pulse shadow-[0_0_8px_#0078d4]" />
