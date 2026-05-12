@@ -33,7 +33,7 @@ export const PROJECTS: Project[] = [
   },
   {
     id: 'p3',
-    title: 'TMOTION EDIT',
+    title: 'MOTION EDIT',
     client: 'NIMBUS',
     year: '2025',
     thumbnail: '/photos/MOTION_EDIT.png',
@@ -62,8 +62,8 @@ export const PROJECTS: Project[] = [
   },
   {
     id: 'p5',
-    title: 'Zen Garden',
-    client: 'Lifestyle Brand',
+    title: 'COMMERCIAL REEL',
+    client: 'Trago Media',
     year: '2024',
     thumbnail: 'https://picsum.photos/seed/zen/1280/720',
     videoUrl: '/videos/final_53.mp4',
@@ -252,6 +252,21 @@ export const PROJECTS: Project[] = [
   },
   {
     id: 'p18',
+    title: 'EDIT',
+    client: 'NIMBUS',
+    year: '2024',
+    thumbnail: 'https://picsum.photos/seed/music/1280/720',
+    videoUrl: '/videos/compiled.mp4',
+    duration: '00:24',
+    tags: ['Music', 'Visuals'],
+    description: 'Reactive visuals that dance to a complex synth score.',
+    idealGrade: 'CINEMA',
+    aspectRatio: '9:16',
+    
+    spherePosition: [4, -4, -5.66]
+  },
+  {
+    id: 'p19',
     title: 'SABRINA KISS',
     client: 'Self-Directed',
     year: '2025',
@@ -262,20 +277,6 @@ export const PROJECTS: Project[] = [
     description: 'A visual exploration of a futuristic cityscape using advanced color grading and custom sound design.',
     idealGrade: 'CINEMA',
     aspectRatio: '16:9',
-    spherePosition: [4, -4, -5.66]
-  },
-  {
-    id: 'p19',
-    title: 'Electric Symphony',
-    client: 'Audio Visualizer',
-    year: '2024',
-    thumbnail: 'https://picsum.photos/seed/music/1280/720',
-    videoUrl: '/videos/compiled.mp4',
-    duration: '00:24',
-    tags: ['Music', 'Visuals'],
-    description: 'Reactive visuals that dance to a complex synth score.',
-    idealGrade: 'CINEMA',
-    aspectRatio: '9:16',
     spherePosition: [5.66, 0, 5.66]
   },
   {
