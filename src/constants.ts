@@ -3,6 +3,21 @@ import { Project, CareerMilestone } from './types';
 export const PROJECTS: Project[] = [
   {
     id: 'p1',
+    title: 'SABRINA KISS',
+    client: 'Self-Directed',
+    year: '2025',
+    thumbnail: '/photos/SABRINA_KISS.png',
+    videoUrl: '/videos/sabrina.mov',
+    duration: '00:14',
+    tags: ['Color Grade', 'VFX', 'Sound'],
+    description: 'A visual exploration of a futuristic cityscape using advanced color grading and custom sound design.',
+    idealGrade: 'CINEMA',
+    aspectRatio: '16:9',
+    
+    spherePosition: [8, 0, 0]
+  },
+  {
+    id: 'p2',
     title: 'TEXTURE MOTION EDIT',
     client: 'NIMBUS',
     year: '2023',
@@ -12,21 +27,6 @@ export const PROJECTS: Project[] = [
     tags: ['Rhythm Edit', 'Motion'],
     description: 'High-energy rhythmic editing showcase for a lifestyle brand campaign.',
     idealGrade: 'BLEACH',
-    aspectRatio: '16:9',
-    
-    spherePosition: [8, 0, 0]
-  },
-  {
-    id: 'p2',
-    title: 'MASKING EDIT REEL',
-    client: 'Self_Project',
-    year: '2023',
-    thumbnail: '/photos/MASKING_EDIT_REEL.png',
-    videoUrl: '/videos/triund_16.mov',
-    duration: '00:16',
-    tags: ['Nature', 'Storytelling'],
-    description: 'Documentary style narrative focused on the ecosystem of the Redwood forests.',
-    idealGrade: 'REC709',
     aspectRatio: '16:9',
     spherePosition: [5.66, 5.66, 0]
     //public/videos/
@@ -65,7 +65,7 @@ export const PROJECTS: Project[] = [
     title: 'COMMERCIAL REEL',
     client: 'Trago Media',
     year: '2024',
-    thumbnail: 'https://picsum.photos/seed/zen/1280/720',
+    thumbnail: '/photos/COMMERCIAL.png',
     videoUrl: '/videos/final_53.mp4',
     duration: '00:53',
     tags: ['Ambient', 'Relaxation'],
@@ -193,16 +193,17 @@ export const PROJECTS: Project[] = [
   },
   {
     id: 'p14',
-    title: 'MASKING EDIT PRE NIMBUS',
-    client: 'NIMBUS',
-    year: '2025',
-    thumbnail: '/photos/MASKING_EDIT_prenimbus.png',
-    videoUrl: '/videos/pre_46.mp4',
-    duration: '00:46',
-    tags: ['Action', 'High-Speed'],
-    description: 'Intense trackside footage captured at 240fps.',
-    idealGrade: 'BLEACH',
-    aspectRatio: '9:16',
+    title: 'MASKING EDIT REEL',
+    client: 'Self_Project',
+    year: '2023',
+    thumbnail: '/photos/MASKING_EDIT_REEL.png',
+    videoUrl: '/videos/triund_16.mov',
+    duration: '00:16',
+    tags: ['Nature', 'Storytelling'],
+    description: 'Documentary style narrative focused on the ecosystem of the Redwood forests.',
+    idealGrade: 'REC709',
+    aspectRatio: '16:9',
+    
     
     spherePosition: [4, -4, 5.66]
   },
@@ -255,7 +256,7 @@ export const PROJECTS: Project[] = [
     title: 'EDIT',
     client: 'NIMBUS',
     year: '2024',
-    thumbnail: 'https://picsum.photos/seed/music/1280/720',
+    thumbnail: '/photos/TOGO.png',
     videoUrl: '/videos/compiled.mp4',
     duration: '00:24',
     tags: ['Music', 'Visuals'],
@@ -267,6 +268,21 @@ export const PROJECTS: Project[] = [
   },
   {
     id: 'p19',
+    title: 'MASKING EDIT PRE NIMBUS',
+    client: 'NIMBUS',
+    year: '2025',
+    thumbnail: '/photos/MASKING_EDIT_prenimbus.png',
+    videoUrl: '/videos/pre_46.mp4',
+    duration: '00:46',
+    tags: ['Action', 'High-Speed'],
+    description: 'Intense trackside footage captured at 240fps.',
+    idealGrade: 'BLEACH',
+    aspectRatio: '9:16',
+    
+    spherePosition: [5.66, 0, 5.66]
+  },
+  {
+    id: 'p20',
     title: 'SABRINA KISS',
     client: 'Self-Directed',
     year: '2025',
@@ -277,20 +293,7 @@ export const PROJECTS: Project[] = [
     description: 'A visual exploration of a futuristic cityscape using advanced color grading and custom sound design.',
     idealGrade: 'CINEMA',
     aspectRatio: '16:9',
-    spherePosition: [5.66, 0, 5.66]
-  },
-  {
-    id: 'p20',
-    title: 'Crystal Clear',
-    client: 'Luxury Jewelry',
-    year: '2024',
-    thumbnail: 'https://picsum.photos/seed/diamond/1280/720',
-    videoUrl: '/videos/comment_almost_intro.mp4',
-    duration: '00:30',
-    tags: ['Macro', 'Product'],
-    description: 'Ultra-macro study of light refraction in high-end diamonds.',
-    idealGrade: 'REC709',
-    aspectRatio: '1:1',
+
     spherePosition: [-5.66, 0, 5.66]
   },
   {
