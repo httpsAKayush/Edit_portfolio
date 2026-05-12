@@ -3,10 +3,10 @@ import { Project, CareerMilestone } from './types';
 export const PROJECTS: Project[] = [
   {
     id: 'p1',
-    title: 'SABRINA KISS',
+    title: 'Intro',
     client: 'Self-Directed',
     year: '2025',
-    thumbnail: '/photos/SABRINA_KISS.png',
+    thumbnail: '/photos/INSTRUCTION.png',
     videoUrl: '/videos/sabrina.mov',
     duration: '00:14',
     tags: ['Color Grade', 'VFX', 'Sound'],
