@@ -12,7 +12,7 @@ import { Github, Twitter, Youtube, Mail, Film, Command, GripVertical, GripHorizo
 export default function App() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [mobileTab, setMobileTab] = useState<'SPHERE' | 'LIBRARY' | 'EDITOR' | 'ASSETS' | 'IDENTITY' | 'ME'>('SPHERE');
+  const [mobileTab, setMobileTab] = useState<'SPHERE' | 'LIBRARY' | 'EDITOR' | 'Projects' | 'IDENTITY' | 'ME'>('SPHERE');
   const [state, setState] = useState<EditorState>({
     currentTime: 0,
     isPlaying: true,
@@ -781,10 +781,10 @@ export default function App() {
            <button 
              onClick={() => setMobileTab('LIBRARY')}
              className={`px-2 py-1 flex items-center gap-1.5 rounded-md border transition-all active:scale-95 ${mobileTab === 'LIBRARY' ? 'bg-editor-accent text-white border-editor-accent' : 'bg-editor-panel text-editor-muted border-editor-border'}`}
-             title="Assets"
+             title="Projects"
            >
              <Library size={10} />
-             <span className="text-[8px] font-black uppercase tracking-tighter">Assets</span>
+             <span className="text-[8px] font-black uppercase tracking-tighter">Projects</span>
            </button>
         </div>
       </header>
@@ -1102,7 +1102,7 @@ export default function App() {
                   className={`flex flex-col items-center gap-1 flex-1 py-1 transition-all ${mobileTab === 'LIBRARY' ? 'text-editor-accent' : 'text-editor-muted'}`}
                 >
                   <Library size={20} />
-                  <span className="text-[9px] font-black uppercase tracking-widest">Assets</span>
+                  <span className="text-[9px] font-black uppercase tracking-widest">Projects</span>
                 </button>
                 <button 
                   onClick={() => {
