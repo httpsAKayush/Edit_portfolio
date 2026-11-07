@@ -4,10 +4,12 @@ import { MediaBin } from './components/MediaBin';
 import { PreviewMonitor } from './components/PreviewMonitor';
 import { Timeline } from './components/Timeline';
 import { Inspector } from './components/Inspector';
-import { Project, EditorState, GradeMode, EditorTool, SequencePart } from './types';
+import { HomeGateway } from './components/HomeGateway';
+import { ClientShowcase } from './components/ClientShowcase';
+import { Project, EditorState, GradeMode, EditorTool, SequencePart, PortfolioMode } from './types';
 import { PROJECTS } from './constants';
 import { parseDurationToSeconds } from './lib/utils';
-import { Github, Twitter, Youtube, Mail, Film, Command, GripVertical, GripHorizontal, Maximize2, Minimize2, Laptop, Smartphone, Library, SquarePlay, Compass, Fingerprint, User } from 'lucide-react';
+import { Github, Twitter, Youtube, Mail, Film, Command, GripVertical, GripHorizontal, Maximize2, Minimize2, Laptop, Smartphone, Library, SquarePlay, Compass, Fingerprint, User, ArrowLeft, Video, Sliders } from 'lucide-react';
 
 export default function App() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -27,6 +29,15 @@ export default function App() {
     isMuted: false,
     volume: 0.8,
     gradeMode: (localStorage.getItem('gradeMode') as GradeMode) || 'REC709'
+  });
+
+  const [portfolioMode, setPortfolioMode] = useState<PortfolioMode>(() => {
+    const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const m = params?.get('mode');
+    if (m === 'editor') return 'EDITOR';
+    if (m === 'client') return 'CLIENT';
+    if (params?.get('project')) return 'CLIENT';
+    return 'GATEWAY';
   });
 
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
@@ -68,7 +79,7 @@ export default function App() {
           setCheckpoint(data);
         })
         .catch(err => {
-          console.error('Error fetching shared state:', err);
+          console.warn('[API] Waiting for shared state:', err?.message || err);
           // Retry after 2 seconds if it failed
           setTimeout(initFetch, 2000);
         });
@@ -77,8 +88,9 @@ export default function App() {
     setTimeout(initFetch, 500);
 
     socketRef.current = io({
-      reconnectionAttempts: 5,
-      timeout: 10000,
+      transports: ['polling', 'websocket'],
+      reconnectionAttempts: 3,
+      timeout: 5000,
     });
 
     socketRef.current.on('connect', () => {
@@ -86,7 +98,7 @@ export default function App() {
     });
 
     socketRef.current.on('connect_error', (error: any) => {
-      console.error('[SOCKET] Connection error:', error);
+      console.warn('[SOCKET] Real-time sync fallback to HTTP:', error?.message || error);
     });
 
     socketRef.current.on('init:state', (state: { [projectId: string]: SequencePart[] }) => {
@@ -716,16 +728,56 @@ export default function App() {
     return () => clearInterval(interval);
   }, [state.isPlaying, state.discoveryIsPlaying, visibleTracks, state.selectedProject?.sequence]);
 
+  if (portfolioMode === 'GATEWAY') {
+    return (
+      <HomeGateway 
+        onSelectMode={(mode) => setPortfolioMode(mode)} 
+        projects={PROJECTS}
+        featuredProject={PROJECTS.find(p => p.id === 'p2') || PROJECTS[0]} 
+      />
+    );
+  }
+
+  if (portfolioMode === 'CLIENT') {
+    return (
+      <ClientShowcase 
+        projects={PROJECTS} 
+        onSwitchToEditor={() => setPortfolioMode('EDITOR')} 
+        onReturnToGateway={() => setPortfolioMode('GATEWAY')} 
+      />
+    );
+  }
+
   return (
     <div ref={containerRef} className="flex flex-col h-screen overflow-hidden bg-editor-bg select-none">
       {/* OS Bar Style Header - Desktop Only */}
-      <header className="h-8 border-b border-editor-border bg-editor-panel hidden md:flex items-center justify-between px-3 text-[11px] font-medium z-50">
-        <div className="flex items-center gap-6">
+      <header className="h-9 border-b border-editor-border bg-editor-panel hidden md:flex items-center justify-between px-3 text-[11px] font-medium z-50">
+        <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-editor-accent">
             <Film size={14} className={state.isPlaying ? "animate-spin duration-[3000ms]" : ""} />
             <span className="font-bold tracking-tight uppercase">Timeline Pro v4.0</span>
           </div>
-          <nav className="flex items-center gap-4 text-editor-muted">
+
+          <div className="flex items-center gap-1.5 pl-2 border-l border-editor-border">
+            <button
+              onClick={() => setPortfolioMode('CLIENT')}
+              className="px-2.5 py-1 rounded bg-blue-600/20 hover:bg-blue-600 border border-blue-500/40 text-blue-300 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer font-semibold text-[10px]"
+              title="Switch to simple client showcase"
+            >
+              <Video size={12} />
+              <span>Client Showcase</span>
+            </button>
+            <button
+              onClick={() => setPortfolioMode('GATEWAY')}
+              className="px-2 py-1 rounded bg-editor-bg hover:bg-white/10 border border-editor-border text-editor-muted hover:text-white transition-all flex items-center gap-1 cursor-pointer text-[10px]"
+              title="Return to Role Selection"
+            >
+              <ArrowLeft size={11} />
+              <span>Role Selection</span>
+            </button>
+          </div>
+
+          <nav className="flex items-center gap-3 text-editor-muted pl-2 border-l border-editor-border">
             {['File', 'Edit', 'Sequence', 'Effects', 'View', 'Help'].map(item => (
               <span key={item} className="hover:text-white cursor-pointer px-1 transition-colors">{item}</span>
             ))}
@@ -763,7 +815,15 @@ export default function App() {
           <Film size={16} className={state.isPlaying ? "animate-spin duration-[3000ms]" : ""} />
           <span className="font-black tracking-tighter uppercase text-xs">Timeline Pro</span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+           <button 
+             onClick={() => setPortfolioMode('CLIENT')}
+             className="px-2 py-0.5 rounded bg-blue-600/20 text-blue-300 border border-blue-500/40 text-[9px] font-bold flex items-center gap-1 active:scale-95"
+             title="Switch to Client Showcase"
+           >
+             <Video size={10} />
+             <span>Client</span>
+           </button>
            <button 
              onClick={() => setMobileTab('ME')}
              className={`px-2 py-1 flex items-center gap-1.5 rounded-md border transition-all active:scale-95 ${mobileTab === 'ME' ? 'bg-editor-accent text-white border-editor-accent shadow-[0_0_10px_#0078d4]' : 'bg-editor-panel text-editor-muted border-editor-border hover:bg-white/5'}`}

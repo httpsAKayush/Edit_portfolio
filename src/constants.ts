@@ -1,5 +1,52 @@
 import { Project, CareerMilestone } from './types';
 
+// Master Google Drive showcase folder link for Ayush's Full HD Masters
+export const MASTER_DRIVE_FOLDER = '';
+
+export interface DriveOrMailAction {
+  url: string;
+  isDrive: boolean;
+  label: string;
+  tooltip: string;
+  target: '_blank' | '_self';
+}
+
+export const getDriveOrMailAction = (project?: Project | null): DriveOrMailAction => {
+  const hasDriveLink = !!(project?.driveUrl && project.driveUrl.trim().length > 0);
+  
+  if (hasDriveLink) {
+    return {
+      url: project!.driveUrl!,
+      isDrive: true,
+      label: 'Drive HD',
+      tooltip: 'Open Full HD Master on Google Drive',
+      target: '_blank'
+    };
+  }
+
+  // If link is not found, automatically send request to mail
+  const email = 'ak4895931@gmail.com';
+  const title = project?.title || 'Video Edit';
+  const client = project?.client || 'Client';
+  const year = project?.year || '2026';
+  const subject = encodeURIComponent(`Request Full HD Master: ${title}`);
+  const body = encodeURIComponent(
+    `Hi Ayush,\n\nI would like to request the Full HD / 4K master edit of:\n- Project: ${title}\n- Client: ${client}\n- Year: ${year}\n\nPlease share the Google Drive access link with me.\n\nThank you!`
+  );
+
+  return {
+    url: `mailto:${email}?subject=${subject}&body=${body}`,
+    isDrive: false,
+    label: 'Drive HD',
+    tooltip: `Request Full HD Master via email (${email})`,
+    target: '_self'
+  };
+};
+
+export const getDriveUrl = (project?: Project | null): string => {
+  return getDriveOrMailAction(project).url;
+};
+
 export const PROJECTS: Project[] = [
   {
     id: 'p1',
@@ -13,7 +60,7 @@ export const PROJECTS: Project[] = [
     description: 'A visual exploration of a futuristic cityscape using advanced color grading and custom sound design.',
     idealGrade: 'CINEMA',
     aspectRatio: '16:9',
-    
+    sphereOnly: true,
     spherePosition: [8, 0, 0]
   },
   {
@@ -28,8 +75,9 @@ export const PROJECTS: Project[] = [
     description: 'High-energy rhythmic editing showcase for a lifestyle brand campaign.',
     idealGrade: 'BLEACH',
     aspectRatio: '16:9',
+    category: 'MOTION',
+    featured: true,
     spherePosition: [5.66, 5.66, 0]
-    //public/videos/
   },
   {
     id: 'p3',
@@ -68,10 +116,12 @@ export const PROJECTS: Project[] = [
     thumbnail: '/photos/COMMERCIAL.png',
     videoUrl: '/videos/final_53.mp4',
     duration: '00:53',
-    tags: ['Ambient', 'Relaxation'],
-    description: '20 minutes of meditative garden visuals for focused work.',
+    tags: ['Commercial', 'Social Hook', 'Color Grade'],
+    description: 'High-energy 9:16 commercial showcase engineered for retention, fast cuts, and punchy product hooks.',
     idealGrade: 'REC709',
     aspectRatio: '9:16',
+    category: 'COMMERCIAL',
+    featured: true,
     spherePosition: [-8, 0, 0]
   },
   {
@@ -83,9 +133,10 @@ export const PROJECTS: Project[] = [
     videoUrl: '/videos/weeding_51.mp4',
     duration: '00:51',
     tags: ['Fashion', 'Edgy'],
-    description: 'High-contrast fashion film shot in the tunnels of Tokyo.',
+    description: 'High-contrast fashion film shot in urban Tokyo with bleach-bypass color grade.',
     idealGrade: 'BLEACH',
     aspectRatio: '16:9',
+    category: 'COMMERCIAL',
     spherePosition: [-5.66, -5.66, 0]
   },
   {
@@ -96,10 +147,11 @@ export const PROJECTS: Project[] = [
     thumbnail: '/photos/MATCHCUT_EDIT.png',
     videoUrl: '/videos/comment_almost_intro.mp4',
     duration: '00:07',
-    tags: ['Wildlife', 'Epic'],
-    description: 'Footage of more than a million wildebeest moving across the Serengeti.',
+    tags: ['Match Cut', 'Rhythm'],
+    description: 'Precision match-cut sequence synchronizing subject motion across different environments.',
     idealGrade: 'CINEMA',
     aspectRatio: '16:9',
+    category: 'REEL',
     spherePosition: [0, -8, 0]
   },
   {
@@ -125,11 +177,12 @@ export const PROJECTS: Project[] = [
     thumbnail: '/photos/PRODUCT_ANIMATION.png',
     videoUrl: '/videos/rtxfinal_36.mp4',
     duration: '00:36',
-    tags: ['Travel', 'Cinematic'],
-    description: 'A sweeping cinematic journey through the dunes of the Sahara.',
+    tags: ['Product', '3D Motion', 'Lighting'],
+    description: 'High-fidelity 3D product rendering, kinetic camera moves, and sleek lighting transitions.',
     idealGrade: 'CINEMA',
     aspectRatio: '9:16',
-    
+    category: 'MOTION',
+    featured: true,
     spherePosition: [0, 0, 8]
   },
   {
@@ -140,11 +193,12 @@ export const PROJECTS: Project[] = [
     thumbnail: '/photos/SHORT_FILM.png',
     videoUrl: '/videos/super_final_koladeio_1_12.mp4',
     duration: '01:12',
-    tags: ['Music Video', 'Stylistic'],
-    description: 'Experimental music video featuring heavy glitch effects and fast-paced intercutting.',
+    tags: ['Music Video', 'Stylistic', 'Narrative'],
+    description: 'Experimental music video featuring heavy glitch effects, rhythmic pacing, and fast-paced intercutting.',
     idealGrade: 'MONO',
     aspectRatio: '16:9',
-    
+    category: 'NARRATIVE',
+    featured: true,
     spherePosition: [0, 0, -8]
   },
   {
@@ -155,11 +209,11 @@ export const PROJECTS: Project[] = [
     thumbnail: '/photos/HOODIE_MOCKUP.png',
     videoUrl: '/videos/VID-20260205-WA0004_13-1.mp4',
     duration: '00:13',
-    tags: ['Documentary', 'Space'],
-    description: 'A deep dive into the future of lunar colonization.',
+    tags: ['Apparel', 'Product Animation'],
+    description: 'Streetwear apparel motion mockup with dynamic textile physics and clean studio lighting.',
     idealGrade: 'CINEMA',
     aspectRatio: '1:1',
-    
+    category: 'COMMERCIAL',
     spherePosition: [4, 4, 5.66]
   },
   {
@@ -293,60 +347,75 @@ export const PROJECTS: Project[] = [
     description: 'A visual exploration of a futuristic cityscape using advanced color grading and custom sound design.',
     idealGrade: 'CINEMA',
     aspectRatio: '16:9',
-
+    category: 'NARRATIVE',
     spherePosition: [-5.66, 0, 5.66]
   },
   {
     id: 'p21',
-    title: 'Endless Summer',
+    title: 'CINEMATIC ODYSSEY',
     client: 'Surf Brand',
     year: '2023',
-    thumbnail: 'https://picsum.photos/seed/surf/1280/720',
-    duration: '05:50',
-    tags: ['Sports', 'Vibrant'],
-    description: 'Chasing the perfect wave across the coast of Australia.',
+    thumbnail: '/photos/ORIENTATION_REEL.png',
+    videoUrl: '/videos/sabrina_14.mov',
+    duration: '00:14',
+    tags: ['Color Grade', 'Atmospheric'],
+    description: 'Atmospheric slow-burn sequence capturing coastal solitude and raw texture.',
     idealGrade: 'CINEMA',
     aspectRatio: '16:9',
+    category: 'NARRATIVE',
+    unclickable: true,
+    comingSoon: true,
     spherePosition: [-5.66, 0, -5.66]
   },
   {
     id: 'p22',
-    title: 'Endless Summer',
-    client: 'Surf Brand',
+    title: 'MOUNTAIN EXPEDITION',
+    client: 'Alpine Brand',
     year: '2023',
-    thumbnail: 'https://picsum.photos/seed/surf/1280/720',
-    duration: '05:50',
+    thumbnail: '/photos/MASKING_EDIT_REEL.png',
+    videoUrl: '/videos/triund_16.mov',
+    duration: '00:16',
     tags: ['Sports', 'Vibrant'],
-    description: 'Chasing the perfect wave across the coast of Australia.',
+    description: 'High-altitude documentary edit showcasing rugged trail ascents and natural light.',
     idealGrade: 'CINEMA',
     aspectRatio: '16:9',
+    category: 'REEL',
+    unclickable: true,
+    comingSoon: true,
     spherePosition: [5.66, 0, -5.66]
   },
   {
     id: 'p23',
-    title: 'Crystal Clear',
+    title: 'CRYSTAL CLEAR',
     client: 'Luxury Jewelry',
     year: '2024',
-    thumbnail: 'https://picsum.photos/seed/diamond/1280/720',
+    thumbnail: '/photos/PRODUCT_ANIMATION.png',
     videoUrl: '/videos/comment_almost_intro.mp4',
     duration: '00:30',
     tags: ['Macro', 'Product'],
-    description: 'Ultra-macro study of light refraction in high-end diamonds.',
+    description: 'Ultra-macro study of light refraction in high-end jewelry and polished metal.',
     idealGrade: 'REC709',
     aspectRatio: '1:1',
+    category: 'COMMERCIAL',
+    unclickable: true,
+    comingSoon: true,
     spherePosition: [0, 5.66, 5.66]
   },
   {
     id: 'p24',
-    title: 'Endless Summer',
-    client: 'Surf Brand',
+    title: 'URBAN KINETIC REEL',
+    client: 'Streetwear Label',
     year: '2023',
-    thumbnail: 'https://picsum.photos/seed/surf/1280/720',
-    duration: '05:50',
-    tags: ['Sports', 'Vibrant'],
-    description: 'Chasing the perfect wave across the coast of Australia.',
+    thumbnail: '/photos/TEXTURE_MOTION_EDIT.png',
+    videoUrl: '/videos/nim_40.mp4',
+    duration: '00:40',
+    tags: ['Streetwear', 'Rhythm'],
+    description: 'Fast-cut montage capturing downtown metropolitan life and raw street fashion.',
     idealGrade: 'CINEMA',
     aspectRatio: '16:9',
+    category: 'REEL',
+    unclickable: true,
+    comingSoon: true,
     spherePosition: [0, -5.66, -5.66]
   }
 ];

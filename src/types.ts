@@ -2,6 +2,8 @@ export type GradeMode = 'REC709' | 'LOG' | 'BLEACH' | 'CINEMA' | 'MONO';
 export type AspectRatio = '16:9' | '9:16' | '1:1' | '2.35:1' | '8:3.5';
 export type EditorViewMode = 'DISCOVERY' | 'EDITOR';
 export type EditorTool = 'SELECT' | 'RAZOR' | 'STRETCH' | 'TEXT' | 'RIPPLE';
+export type PortfolioMode = 'GATEWAY' | 'CLIENT' | 'EDITOR';
+export type ProjectCategory = 'ALL' | 'COMMERCIAL' | 'REEL' | 'MOTION' | 'NARRATIVE';
 
 export interface SequencePart {
   id: string;
@@ -18,6 +20,7 @@ export interface Project {
   year: string;
   thumbnail?: string;
   videoUrl?: string;
+  driveUrl?: string; // Direct Google Drive link for Full HD Master
   duration: string;
   tags: string[];
   description: string;
@@ -25,6 +28,12 @@ export interface Project {
   aspectRatio: AspectRatio;
   sequence?: SequencePart[];
   spherePosition?: [number, number, number]; // [x, y, z] on the navigation sphere
+  featured?: boolean;
+  category?: 'COMMERCIAL' | 'REEL' | 'MOTION' | 'NARRATIVE';
+  deliverables?: string[];
+  sphereOnly?: boolean;
+  unclickable?: boolean;
+  comingSoon?: boolean;
 }
 
 export interface CareerMilestone {

@@ -1,7 +1,7 @@
 import { PanelHeader } from './EditorUI';
 import { Project, AspectRatio } from '../types';
-import { PROJECTS } from '../constants';
-import { LayoutGrid, List, Search, Folder, Play, Smartphone, Monitor as MonitorIcon, Square, Filter } from 'lucide-react';
+import { PROJECTS, getDriveOrMailAction } from '../constants';
+import { LayoutGrid, List, Search, Folder, Play, Smartphone, Monitor as MonitorIcon, Square, Filter, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import React, { useState, memo } from 'react';
 
@@ -15,8 +15,10 @@ export const MediaBin = memo(function MediaBin({ onSelectProject, selectedId }: 
   const [viewMode, setViewMode] = useState<'GRID' | 'LIST'>('LIST');
 
   const filteredProjects = PROJECTS.filter(p => 
-    p.title.toLowerCase().includes(search.toLowerCase()) || 
-    p.tags.some(t => t.toLowerCase().includes(search.toLowerCase()))
+    !p.sphereOnly && (
+      p.title.toLowerCase().includes(search.toLowerCase()) || 
+      p.tags.some(t => t.toLowerCase().includes(search.toLowerCase()))
+    )
   );
 
   const getRatioIcon = (ratio: AspectRatio) => {
@@ -152,10 +154,25 @@ export const MediaBin = memo(function MediaBin({ onSelectProject, selectedId }: 
 
                 {/* Info */}
                 <div className={`p-2 gap-0.5 flex flex-col ${viewMode === 'GRID' ? 'pb-1.5' : ''}`}>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-1">
                     <h3 className={`font-black uppercase truncate tracking-tight group-hover:text-editor-accent transition-colors ${viewMode === 'GRID' ? 'text-[10px]' : 'text-[12px]'}`}>
                       {project.title}
                     </h3>
+                    {(() => {
+                      const action = getDriveOrMailAction(project);
+                      return (
+                        <a
+                          href={action.url}
+                          target={action.target}
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-zinc-500 hover:text-white p-0.5 rounded transition-colors shrink-0"
+                          title={action.tooltip}
+                        >
+                          <ExternalLink size={10} />
+                        </a>
+                      );
+                    })()}
                   </div>
                   {viewMode === 'LIST' && (
                     <div className="flex flex-wrap gap-1.5 mt-1">

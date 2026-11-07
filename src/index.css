@@ -59,8 +59,9 @@
 }
 
 @layer base {
-  body {
-    @apply bg-editor-bg text-editor-text font-sans overflow-hidden;
+  html, body {
+    @apply bg-editor-bg text-editor-text font-sans;
+    min-height: 100%;
   }
 }
 

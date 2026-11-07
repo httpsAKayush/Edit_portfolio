@@ -1,10 +1,11 @@
 import { PanelHeader, EditorButton } from './EditorUI';
 import { Project, GradeMode, AspectRatio, SequencePart, EditorViewMode } from '../types';
-import { Monitor, Play, SkipBack, SkipForward, Pause, RotateCcw, Volume2, VolumeX, Maximize, Settings, Crop, Smartphone, Monitor as MonitorIcon, Square, Move3d, Compass, ArrowLeft, Minimize2 } from 'lucide-react';
+import { Monitor, Play, SkipBack, SkipForward, Pause, RotateCcw, Volume2, VolumeX, Maximize, Settings, Crop, Smartphone, Monitor as MonitorIcon, Square, Move3d, Compass, ArrowLeft, Minimize2, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import React, { useState, useRef, useEffect, memo } from 'react';
 import { formatTimecode, parseDurationToSeconds } from '../lib/utils';
 import { DiscoverySphere } from './DiscoverySphere';
+import { getDriveOrMailAction } from '../constants';
 
 interface PreviewMonitorProps {
   project?: Project;
@@ -150,6 +151,21 @@ export const PreviewMonitor = memo(function PreviewMonitor({
                    </button>
                  ))}
               </div>
+              {project && (() => {
+                const action = getDriveOrMailAction(project);
+                return (
+                  <a
+                    href={action.url}
+                    target={action.target}
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 px-1.5 md:px-2 py-0.5 bg-blue-600/30 hover:bg-blue-600 border border-blue-500/50 rounded text-[8px] md:text-[9px] font-bold uppercase text-blue-300 hover:text-white transition-all shadow-sm"
+                    title={action.tooltip}
+                  >
+                    <ExternalLink size={10} />
+                    <span>{action.isDrive ? 'Drive Full HD' : 'Drive HD'}</span>
+                  </a>
+                );
+              })()}
               <button 
                 onClick={onToggleGuides}
                 className={`text-[8px] md:text-[9px] px-1.5 py-0.5 rounded border transition-colors ${showGuides ? 'bg-editor-accent border-editor-accent text-white' : 'border-editor-border text-editor-muted hover:text-white'}`}
