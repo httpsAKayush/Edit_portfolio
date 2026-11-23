@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
   --color-editor-bg: #121212;
@@ -11,6 +12,12 @@
   --color-editor-timeline: #252525;
   --color-editor-text: #e0e0e0;
   --color-editor-muted: #888888;
+
+  --color-ink: #0a0a0b;
+  --color-graphite: #141312;
+  --color-bone: #efe6d5;
+  --color-sand: #b9a992;
+  --color-vermilion: #eb4a1d;
 
   --animate-scan: scan 4s linear infinite;
   --animate-noise: noise 0.2s steps(4) infinite;
@@ -33,6 +40,84 @@
   80% { transform: translate(-1%,-1%); }
   90% { transform: translate(1%,2%); }
   100% { transform: translate(1%,-1%); }
+}
+
+@keyframes filmDriftRight {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes filmDriftLeft {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes reelSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes sprocketAdvance {
+  from { transform: translateX(-24px); }
+  to { transform: translateX(0); }
+}
+
+.animate-film-right {
+  animation: filmDriftRight 46s linear infinite;
+}
+
+.animate-film-left {
+  animation: filmDriftLeft 58s linear infinite;
+}
+
+.animate-film-slow {
+  animation: filmDriftRight 76s linear infinite;
+}
+
+.animate-reel-rear {
+  animation: reelSpin 9.5s linear infinite;
+}
+
+.animate-reel-front {
+  animation: reelSpin 14s linear infinite;
+}
+
+.animate-reel-rear-fast {
+  animation: reelSpin 3.8s linear infinite;
+}
+
+.animate-reel-front-fast {
+  animation: reelSpin 5.6s linear infinite;
+}
+
+.animate-sprocket-feed {
+  animation: sprocketAdvance 0.9s linear infinite;
+}
+
+.animate-sprocket-feed-fast {
+  animation: sprocketAdvance 0.36s linear infinite;
+}
+
+.anim-paused {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-film-right,
+  .animate-film-left,
+  .animate-film-slow,
+  .animate-reel-rear,
+  .animate-reel-front,
+  .animate-reel-rear-fast,
+  .animate-reel-front-fast,
+  .animate-sprocket-feed,
+  .animate-sprocket-feed-fast {
+    animation: none;
+  }
+}
+
+.font-display {
+  font-family: var(--font-display);
 }
 
 .scanline {
@@ -62,6 +147,7 @@
   html, body {
     @apply bg-editor-bg text-editor-text font-sans;
     min-height: 100%;
+    scroll-behavior: smooth;
   }
 }
 

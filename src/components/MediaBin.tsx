@@ -13,6 +13,7 @@ interface MediaBinProps {
 export const MediaBin = memo(function MediaBin({ onSelectProject, selectedId }: MediaBinProps) {
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'GRID' | 'LIST'>('LIST');
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const filteredProjects = PROJECTS.filter(p => 
     !p.sphereOnly && (
@@ -76,7 +77,9 @@ export const MediaBin = memo(function MediaBin({ onSelectProject, selectedId }: 
       <div className="flex-1 overflow-y-auto p-3 scrollbar-custom">
         <div className={`grid gap-3 pb-8 ${viewMode === 'GRID' ? 'grid-cols-2' : 'grid-cols-1'}`}>
           <AnimatePresence mode="popLayout">
-            {filteredProjects.map((project, idx) => (
+            {filteredProjects.map((project, idx) => {
+              const isUnclickable = !!project.unclickable;
+              return (
               <motion.div
                 key={project.id}
                 layout
@@ -84,41 +87,46 @@ export const MediaBin = memo(function MediaBin({ onSelectProject, selectedId }: 
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ delay: idx * 0.03 }}
-                onClick={() => onSelectProject(project)}
-                className={`group relative flex flex-col rounded-md border transition-all cursor-pointer overflow-hidden ${
-                  selectedId === project.id 
-                    ? 'bg-editor-accent/5 border-editor-accent ring-1 ring-editor-accent' 
-                    : 'border-white/5 bg-editor-bg hover:border-white/20'
+                onClick={() => {
+                  if (!isUnclickable) onSelectProject(project);
+                }}
+                onMouseEnter={() => {
+                  if (!isUnclickable && project.videoUrl) setHoveredId(project.id);
+                }}
+                onMouseLeave={() => {
+                  if (hoveredId === project.id) setHoveredId(null);
+                }}
+                className={`group relative flex flex-col rounded-md border transition-all overflow-hidden ${
+                  isUnclickable
+                    ? 'border-white/5 bg-editor-bg opacity-60 cursor-default'
+                    : selectedId === project.id 
+                      ? 'bg-editor-accent/5 border-editor-accent ring-1 ring-editor-accent cursor-pointer' 
+                      : 'border-white/5 bg-editor-bg hover:border-white/20 cursor-pointer'
                 }`}
               >
                 {/* Thumbnail Wrapper */}
                 <div className={`relative overflow-hidden bg-black ${project.aspectRatio === '9:16' ? 'aspect-[4/5]' : 'aspect-video'}`}>
-                  {project.videoUrl ? (
-                    <>
-                      <img 
-                        src={project.thumbnail} 
-                        alt={project.title} 
-                        className="w-full h-full object-cover opacity-70 group-hover:opacity-0 transition-opacity duration-300" 
-                      />
-                      <video
-                        src={project.videoUrl}
-                        muted
-                        loop
-                        playsInline
-                        className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                        onMouseEnter={(e) => (e.target as HTMLVideoElement).play()}
-                        onMouseLeave={(e) => {
-                          const v = e.target as HTMLVideoElement;
-                          v.pause();
-                          v.currentTime = 0;
-                        }}
-                      />
-                    </>
-                  ) : (
-                    <img 
-                      src={project.thumbnail} 
-                      alt={project.title} 
-                      className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-transform duration-700 group-hover:scale-110" 
+                  <img 
+                    src={project.thumbnail} 
+                    alt={project.title} 
+                    loading="lazy"
+                    className={`w-full h-full object-cover transition-all duration-300 ${
+                      isUnclickable
+                        ? 'opacity-50 grayscale-[0.4]'
+                        : hoveredId === project.id && project.videoUrl
+                          ? 'opacity-0'
+                          : 'opacity-80 group-hover:opacity-100 group-hover:scale-105'
+                    }`}
+                  />
+                  {!isUnclickable && project.videoUrl && hoveredId === project.id && (
+                    <video
+                      src={project.videoUrl}
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      preload="metadata"
+                      className="absolute inset-0 w-full h-full object-cover"
                     />
                   )}
                   
@@ -133,32 +141,36 @@ export const MediaBin = memo(function MediaBin({ onSelectProject, selectedId }: 
                   </div>
 
                   <div className={`absolute bottom-1 right-1 bg-black/80 backdrop-blur-sm border border-white/5 px-1.5 text-[9px] font-mono text-white/80 rounded ${viewMode === 'GRID' ? 'scale-75 origin-bottom-right' : ''}`}>
-                    {project.duration}
+                    {isUnclickable ? 'Upcoming' : project.duration}
                   </div>
 
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity scale-75 group-hover:scale-100 duration-300">
-                    <div className={`${viewMode === 'GRID' ? 'w-8 h-8' : 'w-10 h-10'} rounded-full bg-editor-accent flex items-center justify-center shadow-2xl`}>
-                       <Play size={viewMode === 'GRID' ? 12 : 16} className="text-white fill-white ml-0.5" />
+                  {!isUnclickable && (
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity scale-75 group-hover:scale-100 duration-300 pointer-events-none">
+                      <div className={`${viewMode === 'GRID' ? 'w-8 h-8' : 'w-10 h-10'} rounded-full bg-editor-accent flex items-center justify-center shadow-2xl`}>
+                         <Play size={viewMode === 'GRID' ? 12 : 16} className="text-white fill-white ml-0.5" />
+                      </div>
                     </div>
-                  </div>
+                  )}
                   
                   {/* Scrubbing Bar Mock */}
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10 overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity">
-                     <motion.div 
-                       animate={{ x: ['-100%', '100%'] }}
-                       transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                       className="h-full w-1/3 bg-editor-accent shadow-[0_0_10px_#0078d4]"
-                     />
-                  </div>
+                  {!isUnclickable && (
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10 overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity">
+                       <motion.div 
+                         animate={{ x: ['-100%', '100%'] }}
+                         transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                         className="h-full w-1/3 bg-editor-accent shadow-[0_0_10px_#0078d4]"
+                       />
+                    </div>
+                  )}
                 </div>
 
                 {/* Info */}
                 <div className={`p-2 gap-0.5 flex flex-col ${viewMode === 'GRID' ? 'pb-1.5' : ''}`}>
                   <div className="flex items-center justify-between gap-1">
-                    <h3 className={`font-black uppercase truncate tracking-tight group-hover:text-editor-accent transition-colors ${viewMode === 'GRID' ? 'text-[10px]' : 'text-[12px]'}`}>
+                    <h3 className={`font-black uppercase truncate tracking-tight ${!isUnclickable ? 'group-hover:text-editor-accent transition-colors' : 'text-zinc-400'} ${viewMode === 'GRID' ? 'text-[10px]' : 'text-[12px]'}`}>
                       {project.title}
                     </h3>
-                    {(() => {
+                    {!isUnclickable && (() => {
                       const action = getDriveOrMailAction(project);
                       return (
                         <a
@@ -185,7 +197,8 @@ export const MediaBin = memo(function MediaBin({ onSelectProject, selectedId }: 
                   )}
                 </div>
               </motion.div>
-            ))}
+              );
+            })}
           </AnimatePresence>
         </div>
       </div>

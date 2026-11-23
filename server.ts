@@ -125,7 +125,11 @@ Keep the tone technical, cool, and professional.`,
     });
   }
 
-  const PORT = Number(process.env.PORT) || 3000;
+  const PORT =
+    Number(process.env.DEFAULT_APP_PORT) ||
+    (process.env.PORT && process.env.PORT !== process.env.NGINX_PORT
+      ? Number(process.env.PORT)
+      : 3000);
   server.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });

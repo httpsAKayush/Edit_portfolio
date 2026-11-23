@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import io from 'socket.io-client';
 import { MediaBin } from './components/MediaBin';
 import { PreviewMonitor } from './components/PreviewMonitor';
@@ -347,6 +347,7 @@ export default function App() {
   };
 
   const handleProjectSelect = useCallback((p: Project) => {
+    if (p.unclickable) return;
     // Standardizing the default timeline across all projects
     // This ensures a professional multi-track split (V1/V2) is always the starting point
     const defaultSequence = generateSequence(p);
@@ -397,7 +398,7 @@ export default function App() {
       ...prev, 
       selectedProject: { ...p, sequence },
       currentTime: 0,
-      isPlaying: false,
+      isPlaying: true,
       viewMode: 'EDITOR',
       selectedTool: 'SELECT'
     }));
@@ -665,57 +666,70 @@ export default function App() {
     };
   }, [onMouseMove, stopResizing]);
 
-  // Global playback simulation with "Smart Skip" for hidden tracks
+  // Global playback simulation with "Smart Skip" for hidden tracks.
+  // Only active while in EDITOR portfolio mode, and uses non-overlapping rAF scheduling
+  // to prevent stacked React updates ("Maximum update depth exceeded").
   useEffect(() => {
-    let interval: any;
+    if (portfolioMode !== 'EDITOR') return;
+
+    const shouldAdvanceDiscovery = state.viewMode === 'DISCOVERY' && state.discoveryIsPlaying;
+    const shouldAdvanceEditor = state.viewMode !== 'DISCOVERY' && state.isPlaying;
+
+    if (!shouldAdvanceDiscovery && !shouldAdvanceEditor) return;
+
+    let rafId = 0;
     let lastTime = performance.now();
-    
-    if (state.isPlaying || state.discoveryIsPlaying) {
-      interval = setInterval(() => {
-        const now = performance.now();
-        const delta = (now - lastTime) / 1000;
+    let lastCommit = lastTime;
+
+    const tick = (now: number) => {
+      // Throttle state commits to ~50ms (20fps) and never stack overlapping intervals
+      if (now - lastCommit >= 50) {
+        const delta = Math.min(0.25, Math.max(0, (now - lastTime) / 1000));
         lastTime = now;
+        lastCommit = now;
 
-        setState(prev => {
-          let updates: Partial<typeof prev> = {};
+        setState((prev) => {
+          const updates: Partial<typeof prev> = {};
 
-          // 1. Handle Discovery Playback (Isolated)
-          if (prev.discoveryIsPlaying) {
+          // 1. Discovery Playback (only when in DISCOVERY view)
+          if (prev.viewMode === 'DISCOVERY' && prev.discoveryIsPlaying) {
             const duration = 100;
             let nextDiscoveryTime = prev.discoveryTime + delta;
             if (nextDiscoveryTime >= duration) nextDiscoveryTime = 0;
             updates.discoveryTime = nextDiscoveryTime;
           }
 
-          // 2. Handle Editor Playback
-          if (prev.isPlaying) {
-            const duration = prev.selectedProject 
-              ? parseDurationToSeconds(prev.selectedProject.duration) 
+          // 2. Editor Playback (only when in EDITOR view)
+          if (prev.viewMode !== 'DISCOVERY' && prev.isPlaying) {
+            const duration = prev.selectedProject
+              ? parseDurationToSeconds(prev.selectedProject.duration)
               : 100;
             let nextTime = prev.currentTime + delta;
-            
+
             if (nextTime >= duration) nextTime = 0;
 
             if (prev.selectedProject?.sequence && visibleTracks.size > 0) {
-               const sequence = prev.selectedProject.sequence;
-               const currentPart = sequence.find(p => nextTime >= p.start && nextTime < p.end);
-               
-               if (currentPart) {
-                  const partTrack = currentPart.type === 'NORMAL' ? 'V1' : 'V2';
-                  if (!visibleTracks.has(partTrack)) {
-                     const nextVisible = sequence.find(s => {
-                        const sTrack = s.type === 'NORMAL' ? 'V1' : 'V2';
-                        return s.start >= currentPart.end && visibleTracks.has(sTrack);
-                     });
-                     
-                     if (nextVisible) {
-                        nextTime = nextVisible.start;
-                     } else {
-                        const firstVisible = sequence.find(s => visibleTracks.has(s.type === 'NORMAL' ? 'V1' : 'V2'));
-                        nextTime = firstVisible ? firstVisible.start : 0;
-                     }
+              const sequence = prev.selectedProject.sequence;
+              const currentPart = sequence.find((p) => nextTime >= p.start && nextTime < p.end);
+
+              if (currentPart) {
+                const partTrack = currentPart.type === 'NORMAL' ? 'V1' : 'V2';
+                if (!visibleTracks.has(partTrack)) {
+                  const nextVisible = sequence.find((s) => {
+                    const sTrack = s.type === 'NORMAL' ? 'V1' : 'V2';
+                    return s.start >= currentPart.end && visibleTracks.has(sTrack);
+                  });
+
+                  if (nextVisible) {
+                    nextTime = nextVisible.start;
+                  } else {
+                    const firstVisible = sequence.find((s) =>
+                      visibleTracks.has(s.type === 'NORMAL' ? 'V1' : 'V2')
+                    );
+                    nextTime = firstVisible ? firstVisible.start : 0;
                   }
-               }
+                }
+              }
             }
             updates.currentTime = nextTime >= duration ? 0 : nextTime;
           }
@@ -723,27 +737,50 @@ export default function App() {
           if (Object.keys(updates).length === 0) return prev;
           return { ...prev, ...updates };
         });
-      }, 40);
-    }
-    return () => clearInterval(interval);
-  }, [state.isPlaying, state.discoveryIsPlaying, visibleTracks, state.selectedProject?.sequence]);
+      }
+
+      rafId = window.requestAnimationFrame(tick);
+    };
+
+    rafId = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(rafId);
+  }, [
+    portfolioMode,
+    state.viewMode,
+    state.isPlaying,
+    state.discoveryIsPlaying,
+    visibleTracks,
+    state.selectedProject?.sequence
+  ]);
+
+  const featuredProject = useMemo(
+    () => PROJECTS.find((p) => p.id === 'p2') || PROJECTS[0],
+    []
+  );
+
+  const handleSelectMode = useCallback((mode: PortfolioMode) => {
+    setPortfolioMode(mode);
+  }, []);
+
+  const handleSwitchToEditor = useCallback(() => setPortfolioMode('EDITOR'), []);
+  const handleReturnToGateway = useCallback(() => setPortfolioMode('GATEWAY'), []);
 
   if (portfolioMode === 'GATEWAY') {
     return (
-      <HomeGateway 
-        onSelectMode={(mode) => setPortfolioMode(mode)} 
+      <HomeGateway
+        onSelectMode={handleSelectMode}
         projects={PROJECTS}
-        featuredProject={PROJECTS.find(p => p.id === 'p2') || PROJECTS[0]} 
+        featuredProject={featuredProject}
       />
     );
   }
 
   if (portfolioMode === 'CLIENT') {
     return (
-      <ClientShowcase 
-        projects={PROJECTS} 
-        onSwitchToEditor={() => setPortfolioMode('EDITOR')} 
-        onReturnToGateway={() => setPortfolioMode('GATEWAY')} 
+      <ClientShowcase
+        projects={PROJECTS}
+        onSwitchToEditor={handleSwitchToEditor}
+        onReturnToGateway={handleReturnToGateway}
       />
     );
   }
@@ -898,6 +935,7 @@ export default function App() {
                     onToggleMute={toggleMute}
                     volume={state.volume}
                     onVolumeChange={updateVolume}
+                    onSeek={state.viewMode === 'DISCOVERY' ? updateDiscoveryTime : updateTime}
                   />
                </div>
 
@@ -1115,6 +1153,7 @@ export default function App() {
                            onToggleMute={toggleMute}
                            volume={state.volume}
                            onVolumeChange={updateVolume}
+                           onSeek={updateEditorTime}
                          />
                       </div>
                       <div className="flex-1 bg-editor-timeline border-t border-editor-border overflow-hidden">
